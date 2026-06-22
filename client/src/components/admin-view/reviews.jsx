@@ -56,10 +56,10 @@ function AdminReviewsView() {
                 {review._id}
               </span>
               <span>
-                {review.product?.image ? (
+                {review.product?.images?.[0] || review.product?.image ? (
                   <img
-                    src={review.product.image}
-                    alt={review.product.title || "Product"}
+                    src={review.product?.images?.[0] || review.product.image}
+                    alt={review.product?.title || "Product"}
                     className="w-12 h-12 object-cover rounded-md border"
                   />
                 ) : (

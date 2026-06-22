@@ -20,12 +20,15 @@ import { Fragment, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const initialFormData = {
+  images: [],
   image: null,
   title: "",
   description: "",
   category: "",
   price: "",
   salePrice: "",
+  size: "",
+  colors: "",
   totalStock: "",
   averageReview: 0,
 };
@@ -35,7 +38,7 @@ function AdminProducts() {
     useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [imageFile, setImageFile] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
+  const [uploadedImageUrl, setUploadedImageUrl] = useState([]);
   const [imageLoadingState, setImageLoadingState] = useState(false);
   const [currentEditedId, setCurrentEditedId] = useState(null);
 
@@ -50,7 +53,16 @@ function AdminProducts() {
       ? dispatch(
           editProduct({
             id: currentEditedId,
-            formData,
+            formData: {
+              ...formData,
+              images: Array.isArray(uploadedImageUrl) ? uploadedImageUrl : uploadedImageUrl ? [uploadedImageUrl] : formData.images,
+              image: Array.isArray(uploadedImageUrl) ? uploadedImageUrl[0] || formData.image : uploadedImageUrl || formData.image,
+              colors: formData.colors
+                ? Array.isArray(formData.colors)
+                  ? formData.colors
+                  : String(formData.colors).split(",").map((c) => c.trim()).filter(Boolean)
+                : [],
+            },
           })
         ).then((data) => {
           console.log(data, "edit");
@@ -60,18 +72,27 @@ function AdminProducts() {
             setFormData(initialFormData);
             setOpenCreateProductsDialog(false);
             setCurrentEditedId(null);
+            setImageFile(null);
+            setUploadedImageUrl([]);
           }
         })
       : dispatch(
           addNewProduct({
             ...formData,
-            image: uploadedImageUrl,
+            images: Array.isArray(uploadedImageUrl) ? uploadedImageUrl : uploadedImageUrl ? [uploadedImageUrl] : [],
+            // keep backward compatible `image` for single-image consumers
+            image: Array.isArray(uploadedImageUrl) ? uploadedImageUrl[0] || "" : uploadedImageUrl || "",
+            // convert colors comma separated string to array
+            colors: formData.colors
+              ? formData.colors.split(",").map((c) => c.trim()).filter(Boolean)
+              : [],
           })
         ).then((data) => {
           if (data?.payload?.success) {
             dispatch(fetchAllProducts());
             setOpenCreateProductsDialog(false);
             setImageFile(null);
+            setUploadedImageUrl([]);
             setFormData(initialFormData);
             toast({
               title: "Product add successfully",
@@ -89,10 +110,9 @@ function AdminProducts() {
   }
 
   function isFormValid() {
-    return Object.keys(formData)
-      .filter((currentKey) => currentKey !== "averageReview")
-      .map((key) => formData[key] !== "")
-      .every((item) => item);
+    // require these fields only
+    const required = ["title", "description", "category", "price", "totalStock"];
+    return required.every((key) => formData[key] !== null && formData[key] !== "");
   }
 
   useEffect(() => {
@@ -104,7 +124,16 @@ function AdminProducts() {
   return (
     <Fragment>
       <div className="mb-5 w-full flex justify-end">
-        <Button onClick={() => setOpenCreateProductsDialog(true)}>
+        <Button
+          onClick={() => {
+            // clear previous upload state so each new product starts fresh
+            setUploadedImageUrl([]);
+            setImageFile(null);
+            setFormData(initialFormData);
+            setCurrentEditedId(null);
+            setOpenCreateProductsDialog(true);
+          }}
+        >
           Add New Product
         </Button>
       </div>
@@ -115,6 +144,7 @@ function AdminProducts() {
                 setFormData={setFormData}
                 setOpenCreateProductsDialog={setOpenCreateProductsDialog}
                 setCurrentEditedId={setCurrentEditedId}
+                setUploadedImageUrl={setUploadedImageUrl}
                 product={productItem}
                 handleDelete={handleDelete}
               />
@@ -127,6 +157,9 @@ function AdminProducts() {
           setOpenCreateProductsDialog(false);
           setCurrentEditedId(null);
           setFormData(initialFormData);
+          // clear temp upload values when dialog closes
+          setImageFile(null);
+          setUploadedImageUrl([]);
         }}
       >
         <SheetContent side="right" className="overflow-auto">

@@ -6,6 +6,7 @@ function AdminProductTile({
   setFormData,
   setOpenCreateProductsDialog,
   setCurrentEditedId,
+  setUploadedImageUrl,
   handleDelete,
 }) {
   return (
@@ -13,7 +14,7 @@ function AdminProductTile({
       <div>
         <div className="relative">
           <img
-            src={product?.image}
+            src={product?.images?.[0] || product?.image}
             alt={product?.title}
             className="w-full h-[300px] object-cover rounded-t-lg"
           />
@@ -36,9 +37,21 @@ function AdminProductTile({
         <CardFooter className="flex justify-between items-center">
           <Button
             onClick={() => {
-              setOpenCreateProductsDialog(true);
-              setCurrentEditedId(product?._id);
-              setFormData(product);
+                setOpenCreateProductsDialog(true);
+                setCurrentEditedId(product?._id);
+                // normalize product data for form: colors as comma-separated string
+                const normalized = {
+                  ...product,
+                  images: product?.images || (product?.image ? [product.image] : []),
+                  colors: Array.isArray(product?.colors)
+                    ? product.colors.join(",")
+                    : product?.colors || "",
+                  size: product?.size || "",
+                };
+                setFormData(normalized);
+                if (setUploadedImageUrl) {
+                  setUploadedImageUrl(normalized.images || []);
+                }
             }}
           >
             Edit

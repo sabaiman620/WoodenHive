@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const ProductSchema = new mongoose.Schema(
   {
+    // support multiple images while keeping `image` for backward compatibility
+    images: [String],
     image: String,
     title: String,
     description: String,
@@ -9,6 +11,8 @@ const ProductSchema = new mongoose.Schema(
     price: Number,
     salePrice: Number,
     totalStock: Number,
+    size: String,
+    colors: [String],
     averageReview: Number,
   },
   { timestamps: true }

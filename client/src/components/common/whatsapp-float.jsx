@@ -9,11 +9,11 @@ function WhatsAppFloat() {
       aria-label="Chat on WhatsApp"
       className="fixed bottom-6 right-6 z-50"
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg hover:scale-105 transform-gpu transition">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:scale-105 transform-gpu transition">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          className="h-7 w-7"
+          className="h-8 w-8"
           fill="currentColor"
         >
           <path d="M20.52 3.48A11.95 11.95 0 0 0 12 0C5.373 0 .1 5.373.1 12c0 2.116.553 4.16 1.603 5.985L0 24l6.295-1.633A11.95 11.95 0 0 0 12 24c6.627 0 11.999-5.373 11.999-12 0-3.203-1.246-6.205-3.479-8.52zM12 21.6c-1.14 0-2.256-.298-3.234-.86l-.233-.135-3.743.97.998-3.648-.152-.261A8.4 8.4 0 1 1 20.4 12 8.379 8.379 0 0 1 12 21.6z" />

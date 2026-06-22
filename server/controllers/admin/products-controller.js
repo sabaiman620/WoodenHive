@@ -25,25 +25,31 @@ const addProduct = async (req, res) => {
   try {
     const {
       image,
+      images,
       title,
       description,
       category,
       price,
       salePrice,
       totalStock,
+      size,
+      colors,
       averageReview,
     } = req.body;
 
     console.log(averageReview, "averageReview");
 
     const newlyCreatedProduct = new Product({
-      image,
+      images: images || (image ? [image] : []),
+      image: image || (images && images[0]) || "",
       title,
       description,
       category,
       price,
       salePrice,
       totalStock,
+      size: size || "",
+      colors: Array.isArray(colors) ? colors : colors ? String(colors).split(",").map((c) => c.trim()).filter(Boolean) : [],
       averageReview,
     });
 
@@ -85,6 +91,7 @@ const editProduct = async (req, res) => {
     const { id } = req.params;
     const {
       image,
+      images,
       title,
       description,
       category,
@@ -92,6 +99,8 @@ const editProduct = async (req, res) => {
       price,
       salePrice,
       totalStock,
+      size,
+      colors,
       averageReview,
     } = req.body;
 
@@ -109,7 +118,20 @@ const editProduct = async (req, res) => {
     findProduct.salePrice =
       salePrice === "" ? 0 : salePrice || findProduct.salePrice;
     findProduct.totalStock = totalStock || findProduct.totalStock;
-    findProduct.image = image || findProduct.image;
+    // update images if provided
+    if (images && Array.isArray(images) && images.length > 0) {
+      findProduct.images = images;
+      findProduct.image = images[0];
+    } else if (image) {
+      findProduct.image = image;
+      findProduct.images = [image];
+    }
+    findProduct.size = size || findProduct.size;
+    findProduct.colors = colors
+      ? Array.isArray(colors)
+        ? colors
+        : String(colors).split(",").map((c) => c.trim()).filter(Boolean)
+      : findProduct.colors;
     findProduct.averageReview = averageReview || findProduct.averageReview;
 
     await findProduct.save();

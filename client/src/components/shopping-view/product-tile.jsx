@@ -2,18 +2,35 @@ import { Card, CardContent, CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
 import { categoryOptionsMap } from "@/config";
 import { Badge } from "../ui/badge";
+import { useNavigate } from "react-router-dom";
 
 function ShoppingProductTile({
   product,
   handleGetProductDetails,
   handleAddtoCart,
 }) {
+  const navigate = useNavigate();
+
+  const onProductClick = () => {
+    if (handleGetProductDetails) {
+      handleGetProductDetails(product?._id);
+    } else {
+      navigate(`/shop/product/${product?._id}`);
+    }
+  };
+
+  const onAddToCart = () => {
+    if (handleAddtoCart) {
+      handleAddtoCart(product?._id, product?.totalStock);
+    }
+  };
+
   return (
     <Card className="w-full max-w-sm mx-auto">
-      <div onClick={() => handleGetProductDetails(product?._id)}>
+      <div onClick={onProductClick} className="cursor-pointer">
         <div className="relative">
           <img
-            src={product?.image}
+            src={product?.images?.[0] || product?.image}
             alt={product?.title}
             className="w-full h-[300px] object-cover rounded-t-lg"
           />
@@ -61,7 +78,7 @@ function ShoppingProductTile({
           </Button>
         ) : (
           <Button
-            onClick={() => handleAddtoCart(product?._id, product?.totalStock)}
+            onClick={onAddToCart}
             className="w-full"
           >
             Add to cart

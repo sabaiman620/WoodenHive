@@ -23,6 +23,7 @@ import { checkAuth } from "./store/auth-slice";
 import { Skeleton } from "@/components/ui/skeleton";
 import PaymentSuccessPage from "./pages/shopping-view/payment-success";
 import SearchProducts from "./pages/shopping-view/search";
+import ProductDetailsPage from "./pages/shopping-view/product-details";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -90,6 +91,14 @@ function App() {
           <Route path="payment-success" element={<PaymentSuccessPage />} />
           <Route path="search" element={<SearchProducts />} />
         </Route>
+        <Route
+          path="/shop/product/:productId"
+          element={
+            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+              <ProductDetailsPage />
+            </CheckAuth>
+          }
+        />
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
