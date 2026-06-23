@@ -70,7 +70,7 @@ function Footer() {
               Support
             </p>
             <ul className="space-y-2 text-neutral-300">
-              <li>Phone: +923003395535</li>
+              <li>Phone: +923110719503</li>
               <li>Email: info@woodenhive.com</li>
             </ul>
           </div>
