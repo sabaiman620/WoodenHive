@@ -90,15 +90,8 @@ function App() {
           <Route path="account" element={<ShoppingAccount />} />
           <Route path="payment-success" element={<PaymentSuccessPage />} />
           <Route path="search" element={<SearchProducts />} />
+          <Route path="product/:productId" element={<ProductDetailsPage />} />
         </Route>
-        <Route
-          path="/shop/product/:productId"
-          element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <ProductDetailsPage />
-            </CheckAuth>
-          }
-        />
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

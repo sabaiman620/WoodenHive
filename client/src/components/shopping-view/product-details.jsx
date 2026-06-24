@@ -499,11 +499,25 @@ function ProductDetailsDialog({ open = false, setOpen = () => {}, productDetails
                       <h3 className="font-bold text-lg">{reviewItem?.userName || "User"}</h3>
                     </div>
                     <div className="flex items-center gap-0.5">
-                      <StarRatingComponent rating={reviewItem?.reviewValue || 0} />
+                      <StarRatingComponent rating={reviewItem?.reviewValue || 0} size="small" />
                     </div>
                     <p className="text-muted-foreground">
                       {reviewItem?.reviewMessage || ""}
                     </p>
+                    {/* Show any uploaded images for the review (support `images` array or single `image`) */}
+                    {((reviewItem?.images && reviewItem.images.length > 0) || reviewItem?.image) && (
+                      <div className="mt-2 flex gap-2">
+                        {(reviewItem?.images && reviewItem.images.length > 0
+                          ? reviewItem.images
+                          : reviewItem?.image
+                          ? [reviewItem.image]
+                          : []).map((rImg, rIdx) => (
+                          <div key={rIdx} className="w-20 h-20 overflow-hidden rounded border">
+                            <img src={rImg} alt={`review-${index}-${rIdx}`} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

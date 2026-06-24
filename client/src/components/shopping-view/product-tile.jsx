@@ -12,11 +12,8 @@ function ShoppingProductTile({
   const navigate = useNavigate();
 
   const onProductClick = () => {
-    if (handleGetProductDetails) {
-      handleGetProductDetails(product?._id);
-    } else {
-      navigate(`/shop/product/${product?._id}`);
-    }
+    // Always navigate to the product route (full page) instead of opening a modal.
+    navigate(`/shop/product/${product?._id}`);
   };
 
   const onAddToCart = () => {
@@ -26,7 +23,7 @@ function ShoppingProductTile({
   };
 
   return (
-    <Card className="w-full max-w-sm mx-auto">
+    <Card className="w-full max-w-sm mx-auto h-full flex flex-col">
       <div onClick={onProductClick} className="cursor-pointer">
         <div className="relative">
           <img
@@ -48,7 +45,7 @@ function ShoppingProductTile({
             </Badge>
           ) : null}
         </div>
-        <CardContent className="p-4">
+        <CardContent className="p-4 flex-1">
           <h2 className="text-xl font-bold mb-2">{product?.title}</h2>
           <div className="flex justify-between items-center mb-2">
             <span className="text-[16px] text-muted-foreground">
@@ -71,7 +68,7 @@ function ShoppingProductTile({
           </div>
         </CardContent>
       </div>
-      <CardFooter>
+      <CardFooter className="mt-auto">
         {product?.totalStock === 0 ? (
           <Button className="w-full opacity-60 cursor-not-allowed">
             Out Of Stock

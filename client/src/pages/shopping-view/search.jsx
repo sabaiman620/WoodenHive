@@ -1,4 +1,4 @@
-import ProductDetailsDialog from "@/components/shopping-view/product-details";
+// Product details will open via route, not modal
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,7 +15,7 @@ import { getOrCreateGuestId } from "@/lib/utils";
 
 function SearchProducts() {
   const [keyword, setKeyword] = useState("");
-  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { searchResults } = useSelector((state) => state.shopSearch);
@@ -76,10 +76,7 @@ function SearchProducts() {
     });
   }
 
-  function handleGetProductDetails(getCurrentProductId) {
-    console.log(getCurrentProductId);
-    dispatch(fetchProductDetails(getCurrentProductId));
-  }
+  
 
   useEffect(() => {
     if (productDetails !== null) setOpenDetailsDialog(true);
@@ -108,15 +105,10 @@ function SearchProducts() {
           <ShoppingProductTile
             handleAddtoCart={handleAddtoCart}
             product={item}
-            handleGetProductDetails={handleGetProductDetails}
           />
         ))}
       </div>
-      <ProductDetailsDialog
-        open={openDetailsDialog}
-        setOpen={setOpenDetailsDialog}
-        productDetails={productDetails}
-      />
+      {/* Product details now open via route /shop/product/:id */}
     </div>
   );
 }

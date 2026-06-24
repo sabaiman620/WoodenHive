@@ -1,4 +1,4 @@
-import { LogOut, Menu, ShoppingCart, UserCog } from "lucide-react";
+import { LogOut, Menu, UserCog } from "lucide-react";
 import {
   Link,
   useLocation,
@@ -20,13 +20,13 @@ import {
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { logoutUser } from "@/store/auth-slice";
 import UserCartWrapper from "./cart-wrapper";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fetchCartItems, setCartOpen } from "@/store/shop/cart-slice";
 import { Label } from "../ui/label";
 import { getOrCreateGuestId } from "@/lib/utils";
 
 /* ================= MENU ITEMS ================= */
-function MenuItems() {
+function MenuItems({ closeSheet }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [, setSearchParams] = useSearchParams();
@@ -40,7 +40,8 @@ function MenuItems() {
       case "kitchen":
       case "gifts":
       case "accessories":
-        categoryKey = menuItem.id;
+      case "home":
+        categoryKey = menuItem.id === "home" ? "home" : menuItem.id;
         break;
       case "home-category":
         categoryKey = "home";
@@ -54,18 +55,24 @@ function MenuItems() {
 
     if (location.pathname.includes("listing") && currentFilter) {
       setSearchParams(new URLSearchParams(`?category=${categoryKey}`));
+      if (typeof closeSheet === "function") closeSheet();
+    } else if (categoryKey) {
+      // go to listing so filters apply
+      navigate("/shop/listing");
+      if (typeof closeSheet === "function") closeSheet();
     } else {
       navigate(menuItem.path);
+      if (typeof closeSheet === "function") closeSheet();
     }
   }
 
   return (
-    <nav className="flex flex-col lg:flex-row gap-6 lg:items-center">
+    <nav className={`flex flex-col ${closeSheet ? "px-4 py-6" : "lg:flex-row"} gap-6 lg:items-center`}>
       {shoppingViewHeaderMenuItems.map((item) => (
         <Label
           key={item.id}
           onClick={() => handleNavigate(item)}
-          className="cursor-pointer text-sm font-medium"
+          className={`cursor-pointer ${closeSheet ? "text-lg py-2" : "text-sm"} font-medium`}
         >
           {item.label}
         </Label>
@@ -76,52 +83,24 @@ function MenuItems() {
 
 /* ================= RIGHT CONTENT ================= */
 function HeaderRightContent() {
-  const { user } = useSelector((state) => state.auth) || {};
-  const { cartItems, openCart } = useSelector((state) => state.shopCart) || {};
-  const openCartSheet = openCart || false;
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    const userId = user?.id || getOrCreateGuestId();
-    if (userId) dispatch(fetchCartItems(userId));
-  }, [dispatch, user?.id]);
+  const auth = useSelector((s) => s.auth);
+  const user = auth?.user;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
-      <Sheet open={openCartSheet} onOpenChange={(val) => dispatch(setCartOpen(val))}>
-        <Button
-          variant="outline"
-          size="icon"
-          className="relative"
-          onClick={() => dispatch(setCartOpen(true))}
-        >
-          <ShoppingCart className="h-6 w-6" />
-          <span className="absolute -top-1 right-1 text-sm font-bold">
-            {cartItems?.items?.length || 0}
-          </span>
-        </Button>
+    <div className="flex items-center gap-3">
+      <UserCartWrapper />
 
-        <UserCartWrapper
-          setOpenCartSheet={() => dispatch(setCartOpen(false))}
-          cartItems={cartItems?.items || []}
-        />
-      </Sheet>
-
-      {user?.id ? (
+      {user ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar className="bg-black cursor-pointer">
-              <AvatarFallback className="bg-black text-white font-bold">
-                {user?.userName?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
+            <Avatar>
+              <AvatarFallback>{(user.name || "U")[0]}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
-
-          <DropdownMenuContent side="right" className="w-56">
-            <DropdownMenuLabel>
-              Logged in as {user?.userName || "User"}
-            </DropdownMenuLabel>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/shop/account")}>
               <UserCog className="mr-2 h-4 w-4" />
@@ -136,11 +115,7 @@ function HeaderRightContent() {
         </DropdownMenu>
       ) : (
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/auth/login")}
-          >
+          <Button variant="outline" size="sm" onClick={() => navigate("/auth/login")}>
             Login
           </Button>
           <Button size="sm" onClick={() => navigate("/auth/register")}>
@@ -154,27 +129,19 @@ function HeaderRightContent() {
 
 /* ================= SHOPPING HEADER ================= */
 function ShoppingHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       {/* ✅ Navbar height SAME (h-16) */}
       <div className="flex h-18 items-center justify-between px-4 md:px-6">
-        
         {/* ✅ Logo visually bigger WITHOUT increasing header height */}
         <Link to="/shop/home" className="flex items-center">
-          <img
-            src="/logo.png"
-            alt="Wooden Hive"
-            className="h-12 w-auto object-contain"
-          />
-           <span className="text-2xl font-bold font-stylish text-yellow-900 tracking-wide ">
-
-  Wooden Hive
-</span>
-
+          <img src="/logo.png" alt="Wooden Hive" className="h-12 w-auto object-contain" />
+          <span className="text-2xl font-bold font-stylish text-yellow-900 tracking-wide">Wooden Hive</span>
         </Link>
 
         {/* Mobile Menu */}
-        <Sheet>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="lg:hidden">
               <Menu className="h-6 w-6" />
@@ -182,7 +149,7 @@ function ShoppingHeader() {
           </SheetTrigger>
 
           <SheetContent side="left" className="w-full max-w-xs">
-            <MenuItems />
+            <MenuItems closeSheet={() => setMobileOpen(false)} />
             <HeaderRightContent />
           </SheetContent>
         </Sheet>
@@ -201,3 +168,4 @@ function ShoppingHeader() {
 }
 
 export default ShoppingHeader;
+

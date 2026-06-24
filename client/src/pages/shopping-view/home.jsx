@@ -14,7 +14,6 @@ import ShoppingProductTile from "@/components/shopping-view/product-tile";
 import { useNavigate } from "react-router-dom";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
-import ProductDetailsDialog from "@/components/shopping-view/product-details";
 import { getOrCreateGuestId } from "@/lib/utils";
 
 /* ================= HERO IMAGES ================= */
@@ -35,7 +34,7 @@ const categories = [
 
 function ShoppingHome() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  
 
   const productList =
     useSelector((state) => state.shopProducts?.productList) || [];
@@ -57,9 +56,7 @@ function ShoppingHome() {
     navigate("/shop/listing");
   }
 
-  function handleGetProductDetails(productId) {
-    dispatch(fetchProductDetails(productId));
-  }
+  
 
   function handleAddtoCart(productId) {
     const userId = user?.id || getOrCreateGuestId();
@@ -79,9 +76,7 @@ function ShoppingHome() {
   }
 
   /* ================= EFFECTS ================= */
-  useEffect(() => {
-    if (productDetails) setOpenDetailsDialog(true);
-  }, [productDetails]);
+  
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -188,7 +183,6 @@ function ShoppingHome() {
                 <ShoppingProductTile
                   key={product._id}
                   product={product}
-                  handleGetProductDetails={handleGetProductDetails}
                   handleAddtoCart={handleAddtoCart}
                 />
               ))
@@ -201,11 +195,7 @@ function ShoppingHome() {
         </div>
       </section>
 
-      <ProductDetailsDialog
-        open={openDetailsDialog}
-        setOpen={setOpenDetailsDialog}
-        productDetails={productDetails}
-      />
+      {/* Product details now open via route /shop/product/:id */}
     </div>
   );
 }

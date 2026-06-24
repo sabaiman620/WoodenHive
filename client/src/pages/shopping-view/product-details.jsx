@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductDetails, fetchAllFilteredProducts } from "@/store/shop/products-slice";
@@ -16,17 +16,26 @@ import { getOrCreateGuestId } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 
 function ProductDetailsPage() {
-  const { productId } = useParams();
+  const { productId, id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { toast } = useToast();
 
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
+  const [activeTab, setActiveTab] = useState("reviews");
   const [mainImage, setMainImage] = useState("");
+  // Zoom / pan state for main image
+  const [zoom, setZoom] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const imageContainerRef = useRef(null);
+  const dragMovedRef = useRef(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
 
-  const productDetails = useSelector((state) => state.shoppingProducts?.productDetails) || null;
+  const productDetails = useSelector((state) => state.shopProducts?.productDetails) || null;
+  const isLoading = useSelector((state) => state.shopProducts?.isLoading) || false;
   const user = useSelector((state) => state.auth?.user) || null;
   const cartItems = useSelector((state) => state.shopCart?.cartItems) || { items: [] };
   const reviews = useSelector((state) => state.shopReview?.reviews) || [];
@@ -34,10 +43,16 @@ function ProductDetailsPage() {
   const { toast: showToast } = useToast();
 
   useEffect(() => {
-    if (productId) {
-      dispatch(fetchProductDetails(productId));
+    const effectiveId = productId || id;
+    console.log("ProductDetailsPage: route params", { productId, id, effectiveId });
+    if (effectiveId) {
+      dispatch(fetchProductDetails(effectiveId)).then((res) => {
+        console.log("fetchProductDetails result:", res);
+      }).catch((err) => {
+        console.error("fetchProductDetails error:", err);
+      });
     }
-  }, [productId, dispatch]);
+  }, [productId, id, dispatch]);
 
   useEffect(() => {
     if (productDetails?._id) {
@@ -59,6 +74,67 @@ function ProductDetailsPage() {
       }
     }
   }, [productDetails, dispatch]);
+
+  // Zoom handlers
+  function handleZoomIn() {
+    setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))));
+  }
+
+  function handleZoomOut() {
+    setZoom((z) => Math.max(1, Number((z - 0.25).toFixed(2))));
+    // if zoom becomes 1, reset translate
+    setTranslate((t) => (zoom <= 1.25 ? { x: 0, y: 0 } : t));
+  }
+
+  function resetZoom() {
+    setZoom(1);
+    setTranslate({ x: 0, y: 0 });
+  }
+
+  function onImageClick(e) {
+    // ignore clicks that were part of a drag
+    if (dragMovedRef.current) {
+      dragMovedRef.current = false;
+      return;
+    }
+    // toggle zoom: click to zoom in at cursor position, click again to reset
+    const rect = imageContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    if (zoom <= 1) {
+      const newZoom = 2;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const dx = (centerX - clickX) * (newZoom - 1);
+      const dy = (centerY - clickY) * (newZoom - 1);
+      setTranslate({ x: dx, y: dy });
+      setZoom(newZoom);
+    } else {
+      resetZoom();
+    }
+  }
+
+  function onMouseDown(e) {
+    if (zoom <= 1) return;
+    setIsDragging(true);
+    dragMovedRef.current = false;
+    setStartPos({ x: e.clientX - translate.x, y: e.clientY - translate.y });
+  }
+
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    dragMovedRef.current = true;
+    const x = e.clientX - startPos.x;
+    const y = e.clientY - startPos.y;
+    setTranslate({ x, y });
+  }
+
+  function onMouseUp() {
+    setIsDragging(false);
+  }
 
   function handleRatingChange(getRating) {
     setRating(getRating);
@@ -140,8 +216,21 @@ function ProductDetailsPage() {
       ? reviews.reduce((sum, reviewItem) => sum + reviewItem.reviewValue, 0) / reviews.length
       : 0;
 
-  if (!productDetails) {
+  if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
+
+  if (!productDetails && !isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen px-4 text-center">
+        <h2 className="text-2xl font-semibold mb-4">Product not found</h2>
+        <p className="text-gray-600 mb-6">There was a problem loading this product.</p>
+        <div className="flex gap-3">
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <Button variant="secondary" onClick={() => navigate('/shop/home')}>Shop Home</Button>
+        </div>
+      </div>
+    );
   }
 
   const imageList =
@@ -153,24 +242,6 @@ function ProductDetailsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </Button>
-          <h1 className="text-xl font-bold">Product Details</h1>
-          <div className="w-20" />
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Product Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
@@ -191,13 +262,29 @@ function ProductDetailsPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex-1">
-                <div className="relative overflow-hidden rounded-lg bg-gray-100">
+                <div className="flex-1">
+                <div
+                  ref={imageContainerRef}
+                  className={`relative overflow-hidden rounded-lg bg-gray-100 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={onMouseUp}
+                  onClick={onImageClick}
+                >
                   <img
                     src={mainImage || productDetails?.image || ""}
                     alt={productDetails?.title || "Product Image"}
+                    draggable={false}
+                    style={{
+                      transform: `translate(${translate.x}px, ${translate.y}px) scale(${zoom})`,
+                      transition: isDragging ? 'none' : 'transform 0.18s ease',
+                      willChange: 'transform',
+                    }}
                     className="w-full h-auto object-cover aspect-square"
                   />
+
+                  {/* zoom-on-click (no visible controls) */}
                 </div>
               </div>
             </div>
@@ -206,46 +293,31 @@ function ProductDetailsPage() {
           {/* Product Info */}
           <div className="flex flex-col justify-start">
             <div className="mb-6">
-              <h1 className="text-4xl font-bold mb-3">{productDetails?.title}</h1>
+              <h1 className="text-4xl font-serif font-extrabold mb-3">{productDetails?.title}</h1>
 
-              {/* Specifications */}
-              <div className="mb-6">
-                {productDetails?.size && (
-                  <div className="mb-3">
-                    <span className="text-sm font-semibold text-gray-600 uppercase">Size</span>
-                    <div className="mt-2">
-                      <span className="inline-block px-4 py-2 rounded-lg bg-gray-100 font-medium">
-                        {productDetails.size}
-                      </span>
+              {/* Price (moved up) + Rating */}
+              <div className="flex items-center gap-6 mb-4">
+                <div>
+                  {productDetails?.salePrice > 0 ? (
+                    <div>
+                      <p className="text-3xl font-bold text-[#3b2a25]">Rs {productDetails.salePrice}</p>
+                      <p className="text-sm line-through text-gray-500">Rs {productDetails.price}</p>
                     </div>
-                  </div>
-                )}
-
-                {productDetails?.colors && productDetails.colors.length > 0 && (
-                  <div className="mb-3">
-                    <span className="text-sm font-semibold text-gray-600 uppercase">Colors</span>
-                    <div className="mt-2 flex gap-2">
-                      {productDetails.colors.map((c, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          className="px-4 py-2 rounded-lg border-2 border-gray-200 font-medium text-white transition-all hover:border-primary"
-                          style={{ background: c.toLowerCase() }}
-                          title={c}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-3xl font-bold text-[#3b2a25]">Rs {productDetails?.price || 0}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <StarRatingComponent rating={averageReview} />
+                  <span className="text-gray-600">({averageReview.toFixed(2)})</span>
+                </div>
               </div>
 
-              {/* Description */}
-              <div className="mb-6 text-gray-700 leading-relaxed">
+              {/* Description (simple, no stars) */}
+              <div className="mb-4 text-gray-700 leading-relaxed prose max-w-none">
                 {productDetails?.description ? (
                   productDetails.description.split("\n").map((para, i) => (
-                    <p key={i} className="mb-3">
+                    <p key={i} className="mb-3 text-base">
                       {para}
                     </p>
                   ))
@@ -253,35 +325,39 @@ function ProductDetailsPage() {
                   <p>No description available</p>
                 )}
               </div>
+
+              {/* Colors */}
+              {productDetails?.colors && productDetails.colors.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-2">Color</div>
+                  <div className="flex gap-2">
+                    {productDetails.colors.map((c, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="px-3 py-1 rounded border text-sm"
+                        style={{ background: c.toLowerCase(), color: '#fff' }}
+                        title={c}
+                      >
+                        <span className="hidden sm:inline">{c}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Size in box */}
+              {productDetails?.size && (
+                <div className="mb-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-2">Size</div>
+                  <div className="inline-block px-4 py-2 border rounded-md bg-gray-50">{productDetails.size}</div>
+                </div>
+              )}
             </div>
 
             <Separator className="my-6" />
 
-            {/* Price & Rating */}
-            <div className="mb-6">
-              <div className="flex items-center gap-4 mb-4">
-                <p
-                  className={`text-3xl font-bold ${
-                    productDetails?.salePrice > 0 ? "line-through text-gray-500" : "text-primary"
-                  }`}
-                >
-                  Rs {productDetails?.price || 0}
-                </p>
-                {productDetails?.salePrice > 0 && (
-                  <p className="text-3xl font-bold text-primary">
-                    Rs {productDetails.salePrice}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5">
-                  <StarRatingComponent rating={averageReview} />
-                </div>
-                <span className="text-gray-600">
-                  ({averageReview.toFixed(2)}) · {reviews.length} reviews
-                </span>
-              </div>
-            </div>
+            {/* (Removed duplicate Price & Rating block — price shown above under product title) */}
 
             {/* Add to Cart Button */}
             <div className="mb-6">
@@ -347,9 +423,23 @@ function ProductDetailsPage() {
                               <div className="text-sm text-gray-600">{reviewItem?.reviewValue} / 5</div>
                             </div>
                             <div className="mt-2">
-                              <StarRatingComponent rating={reviewItem?.reviewValue || 0} />
+                              <StarRatingComponent rating={reviewItem?.reviewValue || 0} size="small" />
                             </div>
                             <p className="text-gray-700 mt-3">{reviewItem?.reviewMessage}</p>
+                            {/* render uploaded review images if present (support images array or single image) */}
+                            {((reviewItem?.images && reviewItem.images.length > 0) || reviewItem?.image) && (
+                              <div className="mt-3 flex gap-2">
+                                {(reviewItem?.images && reviewItem.images.length > 0
+                                  ? reviewItem.images
+                                  : reviewItem?.image
+                                  ? [reviewItem.image]
+                                  : []).map((rImg, rIdx) => (
+                                  <div key={rIdx} className="w-24 h-24 overflow-hidden rounded border">
+                                    <img src={rImg} alt={`review-${index}-${rIdx}`} className="w-full h-full object-cover" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -369,13 +459,9 @@ function ProductDetailsPage() {
                   <div className="grid grid-cols-2 gap-4 mb-4 items-center">
                     <div>
                       <label className="block text-sm mb-2">Rating</label>
-                      <select className="p-3 border rounded w-full">
-                        <option>5 Stars</option>
-                        <option>4 Stars</option>
-                        <option>3 Stars</option>
-                        <option>2 Stars</option>
-                        <option>1 Star</option>
-                      </select>
+                      <div>
+                        <StarRatingComponent rating={rating} handleRatingChange={handleRatingChange} />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm mb-2">Photos (optional)</label>
@@ -384,11 +470,11 @@ function ProductDetailsPage() {
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm mb-2">Share your experience</label>
-                    <textarea className="w-full p-3 border rounded" rows={4} />
+                    <textarea value={reviewMsg} onChange={(e) => setReviewMsg(e.target.value)} className="w-full p-3 border rounded" rows={4} />
                   </div>
                   <div className="flex gap-3">
-                    <button className="bg-[#3b2a25] text-white px-6 py-2 rounded">Submit Review</button>
-                    <button className="border px-6 py-2 rounded">Cancel</button>
+                    <button onClick={handleAddReview} className="bg-[#3b2a25] text-white px-6 py-2 rounded">Submit Review</button>
+                    <button onClick={() => setActiveTab('reviews')} className="border px-6 py-2 rounded">Cancel</button>
                   </div>
                 </div>
               )}
@@ -400,7 +486,7 @@ function ProductDetailsPage() {
               <div className="space-y-4">
                 {relatedProducts.length > 0 ? (
                   relatedProducts.map((product) => (
-                    <div key={product._id} className="flex items-center gap-4 p-3 border rounded cursor-pointer" onClick={() => { dispatch(fetchProductDetails(product._id)); navigate(`/shop/product/${product._id}`); }}>
+                    <div key={product._id} className="flex items-center gap-4 p-3 border rounded cursor-pointer" onClick={() => { navigate(`/shop/product/${product._id}`); }}>
                       <img src={product.images?.[0] || product.image} alt={product.title} className="w-20 h-20 object-cover rounded" />
                       <div>
                         <div className="text-sm font-semibold">{product.title}</div>
@@ -416,50 +502,6 @@ function ProductDetailsPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">About Us</h3>
-              <p className="text-gray-400 text-sm">
-                We provide premium quality products with excellent customer service.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Quick Links</h3>
-              <ul className="text-gray-400 text-sm space-y-2">
-                <li><a href="/shop/home" className="hover:text-white transition">Home</a></li>
-                <li><a href="/shop/listing" className="hover:text-white transition">Shop</a></li>
-                <li><a href="#" className="hover:text-white transition">About</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Customer Service</h3>
-              <ul className="text-gray-400 text-sm space-y-2">
-                <li><a href="#" className="hover:text-white transition">Shipping Info</a></li>
-                <li><a href="#" className="hover:text-white transition">Returns</a></li>
-                <li><a href="#" className="hover:text-white transition">FAQ</a></li>
-                <li><a href="#" className="hover:text-white transition">Support</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Contact Us</h3>
-              <p className="text-gray-400 text-sm">
-                Email: info@example.com<br />
-                Phone: +92 311 0719503<br />
-                Address: Pakistan
-              </p>
-            </div>
-          </div>
-          <Separator className="bg-gray-700 mb-8" />
-          <div className="text-center text-gray-400 text-sm">
-            <p>&copy; 2024 WoodenHive. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

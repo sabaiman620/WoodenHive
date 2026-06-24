@@ -4,7 +4,8 @@ const addAddress = async (req, res) => {
   try {
     const { userId, address, city, pincode, phone, notes } = req.body;
 
-    if (!userId || !address || !city || !pincode || !phone || !notes) {
+    // Require only userId, address, city and phone. pincode and notes are optional.
+    if (!userId || !address || !city || !phone) {
       return res.status(400).json({
         success: false,
         message: "Invalid data provided!",

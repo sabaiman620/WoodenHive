@@ -24,6 +24,9 @@ const initialAddressFormData = {
 function Address({ setCurrentSelectedAddress, selectedId }) {
   const [formData, setFormData] = useState(initialAddressFormData);
   const [currentEditedId, setCurrentEditedId] = useState(null);
+  const [phoneError, setPhoneError] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { addressList } = useSelector((state) => state.shopAddress);
@@ -32,6 +35,14 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
 
   function handleManageAddress(event) {
     event.preventDefault();
+    setFormSubmitted(true);
+
+    // ensure phone valid before submitting
+    if (!validatePhone(formData.phone)) {
+      setPhoneError("Enter a valid contact number");
+      toast({ title: "Please enter a valid contact number", variant: "destructive" });
+      return;
+    }
 
     if (addressList.length >= 3 && currentEditedId === null) {
       setFormData(initialAddressFormData);
@@ -105,10 +116,28 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
   }
 
   function isFormValid() {
-    return Object.keys(formData)
-      .map((key) => formData[key].trim() !== "")
-      .every((item) => item);
+    // require address, city and a valid phone. pincode and notes are optional
+    if (!formData.address || !formData.address.trim()) return false;
+    if (!formData.city || !formData.city.trim()) return false;
+    if (!formData.phone || !validatePhone(formData.phone)) return false;
+    return true;
   }
+
+  function validatePhone(phone) {
+    if (!phone || !phone.toString().trim()) return false;
+    const digits = phone.toString().replace(/\D/g, "");
+    return digits.length >= 9 && digits.length <= 15;
+  }
+
+  useEffect(() => {
+    if (!formData.phone || formData.phone.trim() === "") {
+      setPhoneError("Contact number is required");
+    } else if (!validatePhone(formData.phone)) {
+      setPhoneError("Enter a valid contact number");
+    } else {
+      setPhoneError("");
+    }
+  }, [formData.phone]);
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -155,11 +184,17 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
         <CommonForm
           formControls={addressFormControls}
           formData={formData}
-          setFormData={setFormData}
+          setFormData={(next) => {
+            setFormData(next);
+            if (Object.prototype.hasOwnProperty.call(next, 'phone')) setPhoneTouched(true);
+          }}
           buttonText={currentEditedId !== null ? "Edit" : "Add"}
           onSubmit={handleManageAddress}
           isBtnDisabled={!isFormValid()}
         />
+        {phoneError && (phoneTouched || formSubmitted) && (
+          <div className="text-sm text-red-600 mt-1">{phoneError}</div>
+        )}
       </CardContent>
     </Card>
   );

@@ -7,20 +7,18 @@ function StarRatingComponent({ rating, handleRatingChange, size = "default" }) {
   return [1, 2, 3, 4, 5].map((star) => {
     const isActive = star <= safeRating;
 
-    // Compact, read-only variant (used in admin reviews list)
-    if (size === "small" && !handleRatingChange) {
+    // Read-only variant (no click handler) — render plain icons without button wrappers.
+    if (!handleRatingChange) {
+      const iconSizeClass = size === "small" ? "w-4 h-4" : "w-6 h-6";
+      const colorClass = isActive ? "text-yellow-500 fill-yellow-500" : "text-gray-300 fill-gray-300";
       return (
         <span key={star} className="inline-flex mr-0.5">
-          <StarIcon
-            className={`w-4 h-4 ${
-              isActive ? "text-yellow-500 fill-yellow-500" : "text-gray-300 fill-gray-300"
-            }`}
-          />
+          <StarIcon className={`${iconSizeClass} ${colorClass}`} />
         </span>
       );
     }
 
-    // Default interactive buttons (existing behaviour)
+    // Interactive buttons when a handler is provided
     return (
       <Button
         key={star}
@@ -31,12 +29,10 @@ function StarRatingComponent({ rating, handleRatingChange, size = "default" }) {
         }`}
         variant="outline"
         size="icon"
-        onClick={handleRatingChange ? () => handleRatingChange(star) : null}
+        onClick={() => handleRatingChange(star)}
       >
         <StarIcon
-          className={`w-6 h-6 ${
-            isActive ? "fill-yellow-500" : "fill-black"
-          }`}
+          className={`w-6 h-6 ${isActive ? "fill-yellow-500" : "fill-black"}`}
         />
       </Button>
     );
