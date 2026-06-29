@@ -4,6 +4,7 @@ import { addFeatureImage, getFeatureImages } from "@/store/common-slice";
 import { getShippingCost, setShippingCost } from "@/store/admin/settings-slice";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllReviewsForAdmin } from "@/store/admin/review-slice";
 
@@ -16,6 +17,7 @@ function AdminDashboard() {
   const { reviewList } = useSelector((state) => state.adminReview);
   const { shippingCost } = useSelector((state) => state.adminSettings || { shippingCost: 0 });
   const [localShipping, setLocalShipping] = useState(String(shippingCost || "0"));
+  const { toast } = useToast();
 
   console.log(uploadedImageUrl, "uploadedImageUrl");
 
@@ -41,7 +43,11 @@ function AdminDashboard() {
     const numeric = parseFloat(localShipping || "0") || 0;
     dispatch(setShippingCost(numeric)).then((res) => {
       if (res?.payload?.success) {
-        // updated
+        // updated - refresh from server and notify admin
+        dispatch(getShippingCost());
+        toast({ title: "Shipping cost saved" });
+      } else {
+        toast({ title: "Failed to save shipping cost", variant: "destructive" });
       }
     });
   }

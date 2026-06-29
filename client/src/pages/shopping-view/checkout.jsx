@@ -47,7 +47,7 @@ function ShoppingCheckout() {
       : 0;
 
   function handlePlaceOrder() {
-    if (cartItems.length === 0) {
+    if (!cartItems || !cartItems.items || cartItems.items.length === 0) {
       toast({
         title: "Your cart is empty. Please add items to proceed",
         variant: "destructive",

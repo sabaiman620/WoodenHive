@@ -9,11 +9,14 @@ import {
 } from "../ui/sheet";
 import UserCartItemsContent from "./cart-items-content";
 import { ShoppingCart } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setCartOpen } from "@/store/shop/cart-slice";
 
 function UserCartWrapper({ cartItems: propCartItems, setOpenCartSheet }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const cartState = useSelector((s) => s.shopCart?.cartItems) || { items: [] };
+  const openCart = useSelector((s) => s.shopCart?.openCart);
   const cartItems = propCartItems || cartState?.items || [];
 
   const totalCartAmount =
@@ -30,7 +33,7 @@ function UserCartWrapper({ cartItems: propCartItems, setOpenCartSheet }) {
       : 0;
 
   return (
-    <Sheet>
+    <Sheet open={!!openCart} onOpenChange={(val) => dispatch(setCartOpen(val))}>
       <SheetTrigger asChild>
         <Button variant="ghost" className="relative">
           <ShoppingCart className="h-5 w-5" />

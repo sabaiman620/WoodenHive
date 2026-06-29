@@ -2,7 +2,8 @@ import axios from "axios";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const initialState = {
-  cartItems: [],
+  // store cart as an object with items array to match consumers
+  cartItems: { _id: null, userId: null, items: [] },
   isLoading: false,
   openCart: false,
 };
@@ -91,7 +92,7 @@ const shoppingCartSlice = createSlice({
       })
       .addCase(addToCart.rejected, (state) => {
         state.isLoading = false;
-        state.cartItems = [];
+        state.cartItems = { _id: null, userId: null, items: [] };
       })
       .addCase(fetchCartItems.pending, (state) => {
         state.isLoading = true;
@@ -102,7 +103,7 @@ const shoppingCartSlice = createSlice({
       })
       .addCase(fetchCartItems.rejected, (state) => {
         state.isLoading = false;
-        state.cartItems = [];
+        state.cartItems = { _id: null, userId: null, items: [] };
       })
       .addCase(updateCartQuantity.pending, (state) => {
         state.isLoading = true;
@@ -113,7 +114,7 @@ const shoppingCartSlice = createSlice({
       })
       .addCase(updateCartQuantity.rejected, (state) => {
         state.isLoading = false;
-        state.cartItems = [];
+        state.cartItems = { _id: null, userId: null, items: [] };
       })
       .addCase(deleteCartItem.pending, (state) => {
         state.isLoading = true;
@@ -124,7 +125,7 @@ const shoppingCartSlice = createSlice({
       })
       .addCase(deleteCartItem.rejected, (state) => {
         state.isLoading = false;
-        state.cartItems = [];
+        state.cartItems = { _id: null, userId: null, items: [] };
       });
   },
 });
