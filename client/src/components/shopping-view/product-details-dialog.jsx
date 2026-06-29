@@ -17,6 +17,8 @@ import { getOrCreateGuestId } from "@/lib/utils";
 function ProductDetailsDialog({ open = false, setOpen = () => {}, productDetails = null }) {
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewFiles, setReviewFiles] = useState([]);
   const [mainImage, setMainImage] = useState("");
 
   const dispatch = useDispatch();
@@ -82,20 +84,32 @@ function ProductDetailsDialog({ open = false, setOpen = () => {}, productDetails
 
   function handleAddReview() {
     const effectiveUserId = user?.id || getOrCreateGuestId();
-    const effectiveUserName = user?.userName || "Guest";
-
-    dispatch(
-      addReview({
+    const effectiveUserName = user?.userName || (reviewName && reviewName.trim()) || "Guest";
+    let payload;
+    if (reviewFiles && reviewFiles.length > 0) {
+      payload = new FormData();
+      payload.append("productId", productDetails?._id);
+      payload.append("userId", effectiveUserId);
+      payload.append("userName", effectiveUserName);
+      payload.append("reviewMessage", reviewMsg);
+      payload.append("reviewValue", rating);
+      reviewFiles.forEach((f) => payload.append("images", f));
+    } else {
+      payload = {
         productId: productDetails?._id,
         userId: effectiveUserId,
         userName: effectiveUserName,
         reviewMessage: reviewMsg,
         reviewValue: rating,
-      })
-    ).then((data) => {
+      };
+    }
+
+    dispatch(addReview(payload)).then((data) => {
       if (data?.payload?.success) {
         setRating(0);
         setReviewMsg("");
+        setReviewName("");
+        setReviewFiles([]);
         dispatch(getReviews(productDetails?._id));
         toast({
           title: "Review submitted successfully! Awaiting admin approval",
@@ -281,6 +295,27 @@ function ProductDetailsDialog({ open = false, setOpen = () => {}, productDetails
               <StarRatingComponent
                 rating={rating}
                 handleRatingChange={handleRatingChange}
+              />
+            </div>
+            {!user && (
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder="Your name (optional)"
+                  value={reviewName}
+                  onChange={(e) => setReviewName(e.target.value)}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+            )}
+            <div className="mb-3">
+              <label className="block text-sm mb-1">Photos (optional)</label>
+              <input
+                type="file"
+                className="w-full"
+                multiple
+                accept="image/*"
+                onChange={(e) => setReviewFiles(Array.from(e.target.files || []))}
               />
             </div>
             <Input

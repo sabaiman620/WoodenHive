@@ -9,12 +9,23 @@ const initialState = {
 export const addReview = createAsyncThunk(
   "/order/addReview",
   async (formdata) => {
-    const response = await axios.post(
-      `http://localhost:5000/api/shop/review/add`,
-      formdata
-    );
-
-    return response.data;
+    try {
+      const url = `http://localhost:5000/api/shop/review/add`;
+      let response;
+      if (formdata instanceof FormData) {
+        response = await axios.post(url, formdata);
+      } else {
+        response = await axios.post(url, formdata);
+      }
+      // debug
+      // eslint-disable-next-line no-console
+      console.log("addReview response:", response.data);
+      return response.data;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("addReview error:", err?.response || err);
+      throw err;
+    }
   }
 );
 

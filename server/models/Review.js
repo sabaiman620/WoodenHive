@@ -5,6 +5,7 @@ const ProductReviewSchema = new mongoose.Schema(
     productId: String,
     userId: String,
     userName: String,
+    images: [String],
     reviewMessage: String,
     reviewValue: Number,
     isApproved: {

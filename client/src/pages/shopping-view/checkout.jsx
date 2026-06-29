@@ -1,11 +1,12 @@
 import Address from "@/components/shopping-view/address";
 import img from "../../assets/account.jpg";
 import { useDispatch, useSelector } from "react-redux";
+import { getShippingCost } from "@/store/admin/settings-slice";
 import UserCartItemsContent from "@/components/shopping-view/cart-items-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createNewOrder } from "@/store/shop/order-slice";
 import { fetchCartItems, clearCart } from "@/store/shop/cart-slice";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +25,11 @@ function ShoppingCheckout() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const effectiveUserId = user?.id || getOrCreateGuestId();
+  const { shippingCost } = useSelector((state) => state.adminSettings || { shippingCost: 0 });
+
+  useEffect(() => {
+    dispatch(getShippingCost());
+  }, [dispatch]);
 
   console.log(currentSelectedAddress, "cartItems");
 
@@ -122,7 +128,7 @@ function ShoppingCheckout() {
           ? "EasyPaisa"
           : "Cash on Delivery",
       paymentStatus: "pending",
-      totalAmount: totalCartAmount,
+      totalAmount: totalCartAmount + (parseFloat(shippingCost) || 0),
       orderDate: new Date(),
       orderUpdateDate: new Date(),
       paymentId: paymentMethod === "cash-on-delivery" ? "" : transactionId,
@@ -203,8 +209,16 @@ function ShoppingCheckout() {
             : null}
           <div className="mt-8 space-y-4">
             <div className="flex justify-between">
-              <span className="font-bold">Total</span>
-              <span className="font-bold">Rs {totalCartAmount}</span>
+              <span className="font-bold">Subtotal</span>
+              <span className="font-bold">Rs {totalCartAmount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-bold">Shipping</span>
+              <span className="font-bold">Rs {parseFloat(shippingCost || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-bold">Grand Total</span>
+              <span className="font-bold">Rs {(totalCartAmount + (parseFloat(shippingCost || 0))).toFixed(2)}</span>
             </div>
           </div>
           <div className="mt-6 space-y-3">

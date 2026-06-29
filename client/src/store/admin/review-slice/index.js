@@ -60,8 +60,9 @@ const adminReviewSlice = createSlice({
       .addCase(updateReviewApprovalStatus.fulfilled, (state, action) => {
         const updated = action.payload.data;
         if (!updated || !updated._id) return;
+        // merge the updated review fields with existing item so we don't lose enriched product data
         state.reviewList = state.reviewList.map((item) =>
-          item._id === updated._id ? updated : item,
+          item._id === updated._id ? { ...item, ...updated } : item,
         );
       })
       .addCase(deleteReviewForAdmin.fulfilled, (state, action) => {

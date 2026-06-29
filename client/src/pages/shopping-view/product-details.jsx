@@ -23,6 +23,8 @@ function ProductDetailsPage() {
 
   const [reviewMsg, setReviewMsg] = useState("");
   const [rating, setRating] = useState(0);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewFiles, setReviewFiles] = useState([]);
   const [activeTab, setActiveTab] = useState("reviews");
   const [mainImage, setMainImage] = useState("");
   // Zoom / pan state for main image
@@ -189,20 +191,32 @@ function ProductDetailsPage() {
     }
 
     const effectiveUserId = user?.id || getOrCreateGuestId();
-    const effectiveUserName = user?.userName || "Guest";
-
-    dispatch(
-      addReview({
+    const effectiveUserName = user?.userName || (reviewName && reviewName.trim()) || "Guest";
+    let payload;
+    if (reviewFiles && reviewFiles.length > 0) {
+      payload = new FormData();
+      payload.append("productId", productDetails?._id);
+      payload.append("userId", effectiveUserId);
+      payload.append("userName", effectiveUserName);
+      payload.append("reviewMessage", reviewMsg);
+      payload.append("reviewValue", rating);
+      reviewFiles.forEach((f) => payload.append("images", f));
+    } else {
+      payload = {
         productId: productDetails?._id,
         userId: effectiveUserId,
         userName: effectiveUserName,
         reviewMessage: reviewMsg,
         reviewValue: rating,
-      })
-    ).then((data) => {
+      };
+    }
+
+    dispatch(addReview(payload)).then((data) => {
       if (data?.payload?.success) {
         setRating(0);
         setReviewMsg("");
+        setReviewName("");
+        setReviewFiles([]);
         dispatch(getReviews(productDetails?._id));
         showToast({
           title: "Review submitted successfully! Awaiting admin approval",
@@ -453,10 +467,16 @@ function ProductDetailsPage() {
               ) : (
                 <div className="p-6 bg-gray-50 rounded-lg border">
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <input type="text" placeholder="Your name (optional)" className="p-3 border rounded" />
+                    <input
+                      type="text"
+                      placeholder="Your name (optional)"
+                      className="p-3 border rounded"
+                      value={reviewName}
+                      onChange={(e) => setReviewName(e.target.value)}
+                    />
                     <input type="email" placeholder="Your email (optional)" className="p-3 border rounded" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 mb-4 items-center">
+                    <div className="grid grid-cols-2 gap-4 mb-4 items-center">
                     <div>
                       <label className="block text-sm mb-2">Rating</label>
                       <div>
@@ -465,11 +485,12 @@ function ProductDetailsPage() {
                     </div>
                     <div>
                       <label className="block text-sm mb-2">Photos (optional)</label>
-                      <input type="file" className="w-full" />
+                      <input type="file" className="w-full" multiple onChange={(e) => setReviewFiles(Array.from(e.target.files))} />
                     </div>
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm mb-2">Share your experience</label>
+                    {/* name input bound above; no duplicate here */}
                     <textarea value={reviewMsg} onChange={(e) => setReviewMsg(e.target.value)} className="w-full p-3 border rounded" rows={4} />
                   </div>
                   <div className="flex gap-3">
