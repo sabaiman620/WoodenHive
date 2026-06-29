@@ -1,4 +1,5 @@
 const Order = require("../../models/Order");
+const User = require("../../models/User");
 
 const getAllOrdersOfAllUsers = async (req, res) => {
   try {
@@ -28,13 +29,24 @@ const getOrderDetailsForAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const order = await Order.findById(id);
+    const order = await Order.findById(id).lean();
 
     if (!order) {
       return res.status(404).json({
         success: false,
         message: "Order not found!",
       });
+    }
+
+    // Attach customer name from user record when available
+    if (order.userId) {
+      const user = await User.findById(order.userId).lean();
+      if (user?.userName) {
+        order.customerName = user.userName;
+      }
+      if (!order.customerEmail && user?.email) {
+        order.customerEmail = user.email;
+      }
     }
 
     res.status(200).json({

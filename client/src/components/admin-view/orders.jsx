@@ -29,6 +29,9 @@ function AdminOrdersView() {
   const { toast } = useToast();
 
   function handleFetchOrderDetails(getId) {
+    // Open dialog immediately so the UI responds promptly,
+    // then fetch order details from server (will populate modal when ready).
+    setOpenDetailsDialog(true);
     dispatch(getOrderDetailsForAdmin(getId));
   }
 
@@ -57,7 +60,8 @@ function AdminOrdersView() {
   console.log(orderDetails, "orderList");
 
   useEffect(() => {
-    if (orderDetails !== null) setOpenDetailsDialog(true);
+    // If an orderDetails arrives while dialog is closed, open it.
+    if (orderDetails !== null && !openDetailsDialog) setOpenDetailsDialog(true);
   }, [orderDetails]);
 
   return (

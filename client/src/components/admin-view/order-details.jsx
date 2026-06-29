@@ -5,7 +5,7 @@ import { DialogContent } from "../ui/dialog";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
 import { Badge } from "../ui/badge";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
   getAllOrdersForAdmin,
   getOrderDetailsForAdmin,
@@ -20,7 +20,6 @@ const initialFormData = {
 
 function AdminOrderDetailsView({ orderDetails }) {
   const [formData, setFormData] = useState(initialFormData);
-  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const { toast } = useToast();
 
@@ -48,6 +47,17 @@ function AdminOrderDetailsView({ orderDetails }) {
     });
   }
 
+  // Show a loading / placeholder state while order details are being fetched
+  if (!orderDetails) {
+    return (
+      <DialogContent className="sm:max-w-[600px]">
+        <div className="grid gap-6">
+          <div className="text-center py-12">Loading order details...</div>
+        </div>
+      </DialogContent>
+    );
+  }
+
   return (
     <DialogContent className="sm:max-w-[600px]">
       <div className="grid gap-6">
@@ -58,7 +68,9 @@ function AdminOrderDetailsView({ orderDetails }) {
           </div>
           <div className="flex mt-2 items-center justify-between">
             <p className="font-medium">Order Date</p>
-            <Label>{orderDetails?.orderDate.split("T")[0]}</Label>
+            <Label>
+              {orderDetails?.orderDate ? orderDetails.orderDate.split("T")[0] : ""}
+            </Label>
           </div>
           <div className="flex mt-2 items-center justify-between">
             <p className="font-medium">Order Price</p>
@@ -102,10 +114,25 @@ function AdminOrderDetailsView({ orderDetails }) {
             <ul className="grid gap-3">
               {orderDetails?.cartItems && orderDetails?.cartItems.length > 0
                 ? orderDetails?.cartItems.map((item, index) => (
-                    <li key={index} className="flex items-center justify-between">
-                      <span>Title: {item.title}</span>
-                      <span>Quantity: {item.quantity}</span>
-                      <span>Price: Rs {item.price}</span>
+                    <li key={index} className="flex items-center gap-4">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.title || "Product Image"}
+                          className="h-16 w-16 rounded object-cover border border-slate-200"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 rounded bg-slate-100" />
+                      )}
+                      <div className="grid gap-1 flex-1">
+                        <span className="font-medium">{item.title}</span>
+                        <span className="text-sm text-muted-foreground">
+                          Quantity: {item.quantity}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          Price: Rs {item.price}
+                        </span>
+                      </div>
                     </li>
                   ))
                 : null}
@@ -116,7 +143,10 @@ function AdminOrderDetailsView({ orderDetails }) {
           <div className="grid gap-2">
             <div className="font-medium">Shipping Info</div>
             <div className="grid gap-0.5 text-muted-foreground">
-              <span>{user.userName}</span>
+              <span>
+                {orderDetails?.customerName || orderDetails?.userName || "Guest"}
+              </span>
+              <span>{orderDetails?.customerEmail}</span>
               <span>{orderDetails?.addressInfo?.address}</span>
               <span>{orderDetails?.addressInfo?.city}</span>
               <span>{orderDetails?.addressInfo?.pincode}</span>
@@ -177,6 +207,7 @@ AdminOrderDetailsView.propTypes = {
         title: PropTypes.string,
         quantity: PropTypes.number,
         price: PropTypes.number,
+        image: PropTypes.string,
       })
     ),
     addressInfo: PropTypes.shape({
@@ -186,6 +217,8 @@ AdminOrderDetailsView.propTypes = {
       phone: PropTypes.string,
       notes: PropTypes.string,
     }),
+    customerEmail: PropTypes.string,
+    customerName: PropTypes.string,
   }),
 };
 
