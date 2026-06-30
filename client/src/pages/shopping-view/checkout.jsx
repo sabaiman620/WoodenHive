@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { createNewOrder } from "@/store/shop/order-slice";
-import { fetchCartItems, clearCart } from "@/store/shop/cart-slice";
+import { fetchCartItems, clearCart, setCartOpen } from "@/store/shop/cart-slice";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { getOrCreateGuestId, setGuestEmail } from "@/lib/utils";
@@ -26,6 +26,36 @@ function ShoppingCheckout() {
   const navigate = useNavigate();
   const effectiveUserId = user?.id || getOrCreateGuestId();
   const { shippingCost } = useSelector((state) => state.adminSettings || { shippingCost: 0 });
+
+  function getTransactionIdValidationMessage(method, value) {
+    if (method === "cash-on-delivery") {
+      return "";
+    }
+
+    const normalizedValue = value?.trim() || "";
+
+    if (!normalizedValue) {
+      return "Please enter a transaction ID.";
+    }
+
+    if (!/^\d+$/.test(normalizedValue)) {
+      return "Transaction ID must contain digits only.";
+    }
+
+    if (method === "jazzcash" && normalizedValue.length !== 12) {
+      return "JazzCash transaction ID must be exactly 12 digits.";
+    }
+
+    if (![11, 12].includes(normalizedValue.length)) {
+      return "Transaction ID must be 11 or 12 digits.";
+    }
+
+    return "";
+  }
+
+  useEffect(() => {
+    dispatch(setCartOpen(false));
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(getShippingCost());
@@ -77,18 +107,22 @@ function ShoppingCheckout() {
       return;
     }
 
-    // For JazzCash / Easypaisa require transaction ID
-    if (paymentMethod !== "cash-on-delivery") {
-      if (!transactionId || transactionId.trim().length < 6) {
-        toast({
-          title: "Please enter a valid transaction ID.",
-          description:
-            "After sending payment to +92 300 3395535, paste the JazzCash / Easypaisa transaction ID here.",
-          variant: "destructive",
-        });
-        return;
-      }
+    const normalizedTransactionId = transactionId.trim();
+    const transactionIdValidationMessage = getTransactionIdValidationMessage(
+      paymentMethod,
+      normalizedTransactionId
+    );
+
+    if (transactionIdValidationMessage) {
+      toast({
+        title: transactionIdValidationMessage,
+        description:
+          "After sending payment to +92 300 3395535, enter your JazzCash / Easypaisa transaction ID.",
+        variant: "destructive",
+      });
+      return;
     }
+
     if (currentSelectedAddress === null) {
       toast({
         title: "Please select one address to proceed.",
@@ -131,7 +165,8 @@ function ShoppingCheckout() {
       totalAmount: totalCartAmount + (parseFloat(shippingCost) || 0),
       orderDate: new Date(),
       orderUpdateDate: new Date(),
-      paymentId: paymentMethod === "cash-on-delivery" ? "" : transactionId,
+      paymentId:
+        paymentMethod === "cash-on-delivery" ? "" : normalizedTransactionId,
       payerId: "",
     };
 
@@ -269,9 +304,23 @@ function ShoppingCheckout() {
                   type="text"
                   placeholder="Enter transaction ID"
                   value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
+                  onChange={(e) =>
+                    setTransactionId(e.target.value.replace(/\D/g, "").slice(0, 12))
+                  }
+                  maxLength={12}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
+                {getTransactionIdValidationMessage(paymentMethod, transactionId) ? (
+                  <p className="text-xs text-red-500">
+                    {getTransactionIdValidationMessage(paymentMethod, transactionId)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {paymentMethod === "jazzcash"
+                      ? "JazzCash requires exactly 12 digits."
+                      : "Easypaisa accepts 11 or 12 digits."}
+                  </p>
+                )}
               </div>
             )}
           </div>

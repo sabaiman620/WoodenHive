@@ -17,7 +17,39 @@ function Footer() {
             sourced timber, designed to bring warmth and character to every
             corner of your home.
           </p>
-          <div className="flex flex-col gap-3 text-xs text-white">
+
+
+
+            {/* Payment Section */}
+      <div className="border-t border-white/10 bg-black">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2  py-2">
+          <h3 className="text-sm font-semibold lowercase tracking-wide text-white">
+            Payment
+          </h3>
+          <div className="flex gap-7 items-center">
+            {/* Visa */}
+            <img
+              src="/payment/visa.png"
+              alt="Visa"
+              className="h-8 w-auto object-contain"
+            />
+            {/* JazzCash */}
+            <img
+              src="/payment/jazzcash.png"
+              alt="JazzCash"
+              className="h-8 w-auto object-contain"
+            />
+            {/* PayPak */}
+            <img
+              src="/payment/Paypak-logo.png"
+              alt="PayPak"
+              className="h-8 w-auto object-contain"
+            />
+          </div>
+        </div>
+      </div>
+
+          {/* <div className="flex flex-col gap-3 text-xs text-white">
   <span className="underline underline-offset-4">
     Quality Tested Products
   </span>
@@ -29,7 +61,7 @@ function Footer() {
   <span className="underline underline-offset-4">
     Fast & Reliable Delivery
   </span>
-</div>
+</div> */}
 
 
         </div>
@@ -80,9 +112,30 @@ function Footer() {
               Policies
             </p>
             <ul className="space-y-2 text-neutral-300">
-              <li>Shipping & Returns</li>
-              <li>Warranty & Care</li>
-              <li>Privacy Policy</li>
+              <li>
+                <a
+                  href="/shop/shipping-returns"
+                  className="transition hover:text-neutral-100"
+                >
+                  Shipping & Returns
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/shop/warranty-care"
+                  className="transition hover:text-neutral-100"
+                >
+                  Warranty & Care
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/shop/privacy-policy"
+                  className="transition hover:text-neutral-100"
+                >
+                  Privacy Policy
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -208,6 +261,11 @@ function Footer() {
           </div>
         </div>
       </div>
+
+
+
+
+
 
       {/* Bottom bar */}
       <div className="border-t border-white/10 bg-black/95">

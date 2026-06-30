@@ -18,12 +18,10 @@ const initialFormData = {
   paymentStatus: "",
 };
 
-function AdminOrderDetailsView({ orderDetails }) {
+function AdminOrderDetailsView({ orderDetails, isLoading }) {
   const [formData, setFormData] = useState(initialFormData);
   const dispatch = useDispatch();
   const { toast } = useToast();
-
-  console.log(orderDetails, "orderDetailsorderDetails");
 
   function handleUpdateStatus(event) {
     event.preventDefault();
@@ -47,12 +45,23 @@ function AdminOrderDetailsView({ orderDetails }) {
     });
   }
 
-  // Show a loading / placeholder state while order details are being fetched
-  if (!orderDetails) {
+  if (isLoading) {
     return (
       <DialogContent className="sm:max-w-[600px]">
         <div className="grid gap-6">
           <div className="text-center py-12">Loading order details...</div>
+        </div>
+      </DialogContent>
+    );
+  }
+
+  if (!orderDetails) {
+    return (
+      <DialogContent className="sm:max-w-[600px]">
+        <div className="grid gap-6">
+          <div className="text-center py-12 text-red-500">
+            Could not load order details. Please try again.
+          </div>
         </div>
       </DialogContent>
     );
@@ -194,10 +203,11 @@ function AdminOrderDetailsView({ orderDetails }) {
 }
 
 AdminOrderDetailsView.propTypes = {
+  isLoading: PropTypes.bool,
   orderDetails: PropTypes.shape({
     _id: PropTypes.string,
     orderDate: PropTypes.string,
-    totalAmount: PropTypes.number,
+    totalAmount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     paymentMethod: PropTypes.string,
     paymentStatus: PropTypes.string,
     paymentId: PropTypes.string,
@@ -206,7 +216,7 @@ AdminOrderDetailsView.propTypes = {
       PropTypes.shape({
         title: PropTypes.string,
         quantity: PropTypes.number,
-        price: PropTypes.number,
+        price: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         image: PropTypes.string,
       })
     ),

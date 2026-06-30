@@ -24,13 +24,14 @@ import { Trash2 } from "lucide-react";
 
 function AdminOrdersView() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
-  const { orderList, orderDetails } = useSelector((state) => state.adminOrder);
+  const { orderList, orderDetails, isLoading } = useSelector(
+    (state) => state.adminOrder
+  );
   const dispatch = useDispatch();
   const { toast } = useToast();
 
   function handleFetchOrderDetails(getId) {
-    // Open dialog immediately so the UI responds promptly,
-    // then fetch order details from server (will populate modal when ready).
+    dispatch(resetOrderDetails());
     setOpenDetailsDialog(true);
     dispatch(getOrderDetailsForAdmin(getId));
   }
@@ -57,19 +58,26 @@ function AdminOrdersView() {
     dispatch(getAllOrdersForAdmin());
   }, [dispatch]);
 
-  console.log(orderDetails, "orderList");
-
-  useEffect(() => {
-    // If an orderDetails arrives while dialog is closed, open it.
-    if (orderDetails !== null && !openDetailsDialog) setOpenDetailsDialog(true);
-  }, [orderDetails]);
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>All Orders</CardTitle>
       </CardHeader>
       <CardContent>
+        <Dialog
+          open={openDetailsDialog}
+          onOpenChange={(isOpen) => {
+            setOpenDetailsDialog(isOpen);
+            if (!isOpen) {
+              dispatch(resetOrderDetails());
+            }
+          }}
+        >
+          <AdminOrderDetailsView
+            orderDetails={orderDetails}
+            isLoading={isLoading}
+          />
+        </Dialog>
         <Table>
           <TableHeader>
             <TableRow>
@@ -88,7 +96,11 @@ function AdminOrdersView() {
               ? orderList.map((orderItem) => (
                   <TableRow key={orderItem?._id}>
                     <TableCell>{orderItem?._id}</TableCell>
-                    <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                    <TableCell>
+                      {orderItem?.orderDate
+                        ? orderItem.orderDate.split("T")[0]
+                        : "-"}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         className={`py-1 px-3 ${
@@ -118,23 +130,12 @@ function AdminOrdersView() {
                     <TableCell>Rs {orderItem?.totalAmount}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Dialog
-                          open={openDetailsDialog}
-                          onOpenChange={() => {
-                            setOpenDetailsDialog(false);
-                            dispatch(resetOrderDetails());
-                          }}
+                        <Button
+                          onClick={() => handleFetchOrderDetails(orderItem?._id)}
+                          size="sm"
                         >
-                          <Button
-                            onClick={() =>
-                              handleFetchOrderDetails(orderItem?._id)
-                            }
-                            size="sm"
-                          >
-                            View Details
-                          </Button>
-                          <AdminOrderDetailsView orderDetails={orderDetails} />
-                        </Dialog>
+                          View Details
+                        </Button>
                         <Button
                           onClick={() => handleDeleteOrder(orderItem?._id)}
                           variant="destructive"

@@ -1,24 +1,65 @@
 const Address = require("../../models/Address");
 
+const phonePattern = /^(03\d{9}|\+923\d{9})$/;
+const pincodePattern = /^\d{5}$/;
+
+const normalizePhone = (phone) =>
+  phone?.toString().trim() || "";
+
+const normalizePincode = (pincode) =>
+  pincode?.toString().trim() || "";
+
+const isValidPhone = (phone) => phonePattern.test(normalizePhone(phone));
+const isValidPincode = (pincode) => pincodePattern.test(normalizePincode(pincode));
+
 const addAddress = async (req, res) => {
   try {
     const { userId, address, city, pincode, phone, notes } = req.body;
+    const normalizedPhone = normalizePhone(phone);
+    const normalizedPincode = normalizePincode(pincode);
 
-    // Require only userId, address, city and phone. pincode and notes are optional.
-    if (!userId || !address || !city || !phone) {
+    if (!userId || !address || !city || !normalizedPhone || !normalizedPincode) {
       return res.status(400).json({
         success: false,
         message: "Invalid data provided!",
       });
     }
 
+    if (!/^\+?\d+$/.test(normalizedPhone) || normalizedPhone.slice(1).includes("+")) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid phone number.",
+      });
+    }
+
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid phone number.",
+      });
+    }
+
+    if (!/^\d+$/.test(normalizedPincode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pincode may contain numbers only.",
+      });
+    }
+
+    if (!isValidPincode(normalizedPincode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pincode must be exactly 5 digits long.",
+      });
+    }
+
     const newlyCreatedAddress = new Address({
       userId,
-      address,
-      city,
-      pincode,
-      notes,
-      phone,
+      address: address.trim(),
+      city: city.trim(),
+      pincode: normalizedPincode,
+      notes: notes?.trim() || "",
+      phone: normalizedPhone,
     });
 
     await newlyCreatedAddress.save();
@@ -65,6 +106,8 @@ const editAddress = async (req, res) => {
   try {
     const { userId, addressId } = req.params;
     const formData = req.body;
+    const normalizedPhone = normalizePhone(formData.phone);
+    const normalizedPincode = normalizePincode(formData.pincode);
 
     if (!userId || !addressId) {
       return res.status(400).json({
@@ -73,12 +116,61 @@ const editAddress = async (req, res) => {
       });
     }
 
+    if (
+      !formData.address?.trim() ||
+      !formData.city?.trim() ||
+      !normalizedPhone ||
+      !normalizedPincode
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Address, city, pincode and contact number are required!",
+      });
+    }
+
+    if (!/^\+?\d+$/.test(normalizedPhone) || normalizedPhone.slice(1).includes("+")) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid phone number.",
+      });
+    }
+
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid phone number.",
+      });
+    }
+
+    if (!/^\d+$/.test(normalizedPincode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pincode may contain numbers only.",
+      });
+    }
+
+    if (!isValidPincode(normalizedPincode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Pincode must be exactly 5 digits long.",
+      });
+    }
+
+    const sanitizedFormData = {
+      ...formData,
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      pincode: normalizedPincode,
+      notes: formData.notes?.trim() || "",
+      phone: normalizedPhone,
+    };
+
     const address = await Address.findOneAndUpdate(
       {
         _id: addressId,
         userId,
       },
-      formData,
+      sanitizedFormData,
       { new: true }
     );
 

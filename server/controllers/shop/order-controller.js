@@ -3,6 +3,61 @@ const Cart = require("../../models/Cart");
 const Product = require("../../models/Product");
 const { sendOrderConfirmationEmail } = require("../../helpers/email");
 
+const CANCELLATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const validateTransactionId = (paymentMethod, paymentId) => {
+  const normalizedPaymentMethod = paymentMethod?.trim() || "";
+  const normalizedPaymentId = paymentId?.toString().trim() || "";
+
+  if (normalizedPaymentMethod === "Cash on Delivery") {
+    return { isValid: true, normalizedPaymentId: "" };
+  }
+
+  if (!normalizedPaymentId) {
+    return {
+      isValid: false,
+      message: "Transaction ID is required for online payments.",
+    };
+  }
+
+  if (!/^\d+$/.test(normalizedPaymentId)) {
+    return {
+      isValid: false,
+      message: "Transaction ID must contain digits only.",
+    };
+  }
+
+  if (normalizedPaymentMethod === "JazzCash" && normalizedPaymentId.length !== 12) {
+    return {
+      isValid: false,
+      message: "JazzCash transaction ID must be exactly 12 digits.",
+    };
+  }
+
+  if (![11, 12].includes(normalizedPaymentId.length)) {
+    return {
+      isValid: false,
+      message: "Transaction ID must be 11 or 12 digits.",
+    };
+  }
+
+  return { isValid: true, normalizedPaymentId };
+};
+
+const canCancelOrderWithinWindow = (orderDate) => {
+  if (!orderDate) {
+    return false;
+  }
+
+  const placedAt = new Date(orderDate).getTime();
+
+  if (Number.isNaN(placedAt)) {
+    return false;
+  }
+
+  return Date.now() - placedAt <= CANCELLATION_WINDOW_MS;
+};
+
 const createOrder = async (req, res) => {
   try {
     const {
@@ -29,6 +84,15 @@ const createOrder = async (req, res) => {
       });
     }
 
+    const transactionValidation = validateTransactionId(paymentMethod, paymentId);
+
+    if (!transactionValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: transactionValidation.message,
+      });
+    }
+
     const newlyCreatedOrder = new Order({
       userId,
       cartId,
@@ -41,7 +105,7 @@ const createOrder = async (req, res) => {
       totalAmount,
       orderDate,
       orderUpdateDate,
-      paymentId,
+      paymentId: transactionValidation.normalizedPaymentId,
       payerId,
     });
 
@@ -208,9 +272,87 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
+const cancelOrderByUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, customerEmail } = req.body;
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found!",
+      });
+    }
+
+    const normalizedEmail = customerEmail?.trim().toLowerCase();
+    const hasMatchingUserId = userId && order.userId === userId;
+    const hasMatchingEmail = normalizedEmail && order.customerEmail === normalizedEmail;
+
+    if (!hasMatchingUserId && !hasMatchingEmail) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to cancel this order.",
+      });
+    }
+
+    if (order.orderStatus === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "This order is already cancelled.",
+      });
+    }
+
+    if (order.orderStatus === "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "Delivered orders cannot be cancelled.",
+      });
+    }
+
+    if (!canCancelOrderWithinWindow(order.orderDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Orders can only be cancelled within 24 hours of placement.",
+      });
+    }
+
+    for (const item of order.cartItems || []) {
+      if (!item?.productId || !item?.quantity) {
+        continue;
+      }
+
+      const product = await Product.findById(item.productId);
+
+      if (product) {
+        product.totalStock += item.quantity;
+        await product.save();
+      }
+    }
+
+    order.orderStatus = "cancelled";
+    order.orderUpdateDate = new Date();
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully.",
+      data: order,
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occured!",
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getAllOrdersByUser,
   getGuestOrdersByIdAndEmail,
   getOrderDetails,
+  cancelOrderByUser,
 };

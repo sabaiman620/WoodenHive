@@ -62,8 +62,11 @@ function UserCartWrapper({ cartItems: propCartItems, setOpenCartSheet }) {
         </div>
         <Button
           onClick={() => {
+            dispatch(setCartOpen(false));
+            if (typeof setOpenCartSheet === "function") {
+              setOpenCartSheet(false);
+            }
             navigate("/shop/checkout");
-            if (typeof setOpenCartSheet === "function") setOpenCartSheet(false);
           }}
           className="w-full mt-6"
         >

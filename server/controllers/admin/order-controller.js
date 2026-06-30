@@ -40,12 +40,16 @@ const getOrderDetailsForAdmin = async (req, res) => {
 
     // Attach customer name from user record when available
     if (order.userId) {
-      const user = await User.findById(order.userId).lean();
-      if (user?.userName) {
-        order.customerName = user.userName;
-      }
-      if (!order.customerEmail && user?.email) {
-        order.customerEmail = user.email;
+      try {
+        const user = await User.findById(order.userId).lean();
+        if (user?.userName) {
+          order.customerName = user.userName;
+        }
+        if (!order.customerEmail && user?.email) {
+          order.customerEmail = user.email;
+        }
+      } catch (_) {
+        // Ignore invalid legacy userId values and return order details safely
       }
     }
 

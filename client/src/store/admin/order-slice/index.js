@@ -4,6 +4,7 @@ import axios from "axios";
 const initialState = {
   orderList: [],
   orderDetails: null,
+  isLoading: false,
 };
 
 export const getAllOrdersForAdmin = createAsyncThunk(
@@ -66,9 +67,8 @@ const adminOrderSlice = createSlice({
   initialState,
   reducers: {
     resetOrderDetails: (state) => {
-      console.log("resetOrderDetails");
-
       state.orderDetails = null;
+      state.isLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -86,6 +86,7 @@ const adminOrderSlice = createSlice({
       })
       .addCase(getOrderDetailsForAdmin.pending, (state) => {
         state.isLoading = true;
+        state.orderDetails = null;
       })
       .addCase(getOrderDetailsForAdmin.fulfilled, (state, action) => {
         state.isLoading = false;

@@ -21,11 +21,16 @@ const initialAddressFormData = {
   notes: "",
 };
 
+const phonePattern = /^(03\d{9}|\+923\d{9})$/;
+const pincodePattern = /^\d{5}$/;
+
 function Address({ setCurrentSelectedAddress, selectedId }) {
   const [formData, setFormData] = useState(initialAddressFormData);
   const [currentEditedId, setCurrentEditedId] = useState(null);
   const [phoneError, setPhoneError] = useState("");
+  const [pincodeError, setPincodeError] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [pincodeTouched, setPincodeTouched] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -33,19 +38,98 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
   const { toast } = useToast();
   const effectiveUserId = user?.id || getOrCreateGuestId();
 
+  function resetValidationState() {
+    setPhoneError("");
+    setPincodeError("");
+    setPhoneTouched(false);
+    setPincodeTouched(false);
+    setFormSubmitted(false);
+  }
+
+  function validatePhone(phone) {
+    const normalizedPhone = phone?.toString().trim() || "";
+    return phonePattern.test(normalizedPhone);
+  }
+
+  function validatePincode(pincode) {
+    const normalizedPincode = pincode?.toString().trim() || "";
+    return pincodePattern.test(normalizedPincode);
+  }
+
+  function getPhoneValidationMessage(phone) {
+    const normalizedPhone = phone?.toString().trim();
+
+    if (!normalizedPhone) {
+      return "Please enter a contact number.";
+    }
+
+    if (!/^\+?\d+$/.test(normalizedPhone) || normalizedPhone.slice(1).includes("+")) {
+      return "Please enter a valid phone number.";
+    }
+
+    if (!validatePhone(normalizedPhone)) {
+      return "Please enter a valid phone number.";
+    }
+
+    return "";
+  }
+
+  function getPincodeValidationMessage(pincode) {
+    const normalizedPincode = pincode?.toString().trim();
+
+    if (!normalizedPincode) {
+      return "Please enter a pincode.";
+    }
+
+    if (!/^\d+$/.test(normalizedPincode)) {
+      return "Pincode may contain numbers only.";
+    }
+
+    if (!validatePincode(normalizedPincode)) {
+      return "Pincode must be exactly 5 digits long.";
+    }
+
+    return "";
+  }
+
   function handleManageAddress(event) {
     event.preventDefault();
     setFormSubmitted(true);
+    const normalizedPhone = formData.phone?.toString().trim() || "";
+    const normalizedPincode = formData.pincode?.toString().trim() || "";
+    const phoneValidationMessage = getPhoneValidationMessage(normalizedPhone);
+    const pincodeValidationMessage = getPincodeValidationMessage(normalizedPincode);
 
-    // ensure phone valid before submitting
-    if (!validatePhone(formData.phone)) {
-      setPhoneError("Enter a valid contact number");
-      toast({ title: "Please enter a valid contact number", variant: "destructive" });
+    if (phoneValidationMessage) {
+      setPhoneError(phoneValidationMessage);
+      toast({
+        title: phoneValidationMessage,
+        variant: "destructive",
+      });
       return;
     }
 
+    if (pincodeValidationMessage) {
+      setPincodeError(pincodeValidationMessage);
+      toast({
+        title: pincodeValidationMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      pincode: normalizedPincode,
+      notes: formData.notes.trim(),
+      phone: normalizedPhone,
+    };
+
     if (addressList.length >= 3 && currentEditedId === null) {
       setFormData(initialAddressFormData);
+      resetValidationState();
       toast({
         title: "You can add max 3 addresses",
         variant: "destructive",
@@ -59,29 +143,41 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
           editaAddress({
             userId: effectiveUserId,
             addressId: currentEditedId,
-            formData,
+            formData: payload,
           })
         ).then((data) => {
           if (data?.payload?.success) {
             dispatch(fetchAllAddresses(effectiveUserId));
             setCurrentEditedId(null);
             setFormData(initialAddressFormData);
+            resetValidationState();
             toast({
               title: "Address updated successfully",
+            });
+          } else {
+            toast({
+              title: data?.payload?.message || "Could not update address",
+              variant: "destructive",
             });
           }
         })
       : dispatch(
           addNewAddress({
-            ...formData,
+            ...payload,
             userId: effectiveUserId,
           })
         ).then((data) => {
           if (data?.payload?.success) {
             dispatch(fetchAllAddresses(effectiveUserId));
             setFormData(initialAddressFormData);
+            resetValidationState();
             toast({
               title: "Address added successfully",
+            });
+          } else {
+            toast({
+              title: data?.payload?.message || "Could not add address",
+              variant: "destructive",
             });
           }
         });
@@ -105,8 +201,8 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
 
   function handleEditAddress(getCuurentAddress) {
     setCurrentEditedId(getCuurentAddress?._id);
+    resetValidationState();
     setFormData({
-      ...formData,
       address: getCuurentAddress?.address,
       city: getCuurentAddress?.city,
       phone: getCuurentAddress?.phone,
@@ -116,28 +212,20 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
   }
 
   function isFormValid() {
-    // require address, city and a valid phone. pincode and notes are optional
     if (!formData.address || !formData.address.trim()) return false;
     if (!formData.city || !formData.city.trim()) return false;
+    if (!formData.pincode || !validatePincode(formData.pincode)) return false;
     if (!formData.phone || !validatePhone(formData.phone)) return false;
     return true;
   }
 
-  function validatePhone(phone) {
-    if (!phone || !phone.toString().trim()) return false;
-    const digits = phone.toString().replace(/\D/g, "");
-    return digits.length >= 9 && digits.length <= 15;
-  }
+  useEffect(() => {
+    setPhoneError(getPhoneValidationMessage(formData.phone));
+  }, [formData.phone]);
 
   useEffect(() => {
-    if (!formData.phone || formData.phone.trim() === "") {
-      setPhoneError("Contact number is required");
-    } else if (!validatePhone(formData.phone)) {
-      setPhoneError("Enter a valid contact number");
-    } else {
-      setPhoneError("");
-    }
-  }, [formData.phone]);
+    setPincodeError(getPincodeValidationMessage(formData.pincode));
+  }, [formData.pincode]);
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -145,9 +233,7 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
     }
   }, [dispatch, effectiveUserId]);
 
-  console.log(addressList, "addressList");
-
-   // Auto-select first address if none is selected
+  // Auto-select first address if none is selected
   useEffect(() => {
     if (
       addressList &&
@@ -186,12 +272,20 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
           formData={formData}
           setFormData={(next) => {
             setFormData(next);
-            if (Object.prototype.hasOwnProperty.call(next, 'phone')) setPhoneTouched(true);
+            if (Object.prototype.hasOwnProperty.call(next, "phone")) {
+              setPhoneTouched(true);
+            }
+            if (Object.prototype.hasOwnProperty.call(next, "pincode")) {
+              setPincodeTouched(true);
+            }
           }}
           buttonText={currentEditedId !== null ? "Edit" : "Add"}
           onSubmit={handleManageAddress}
           isBtnDisabled={!isFormValid()}
         />
+        {pincodeError && (pincodeTouched || formSubmitted) && (
+          <div className="text-sm text-red-600 mt-1">{pincodeError}</div>
+        )}
         {phoneError && (phoneTouched || formSubmitted) && (
           <div className="text-sm text-red-600 mt-1">{phoneError}</div>
         )}

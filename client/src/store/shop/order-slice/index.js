@@ -3,6 +3,7 @@ import axios from "axios";
 
 const initialState = {
   isLoading: false,
+  isCancellingOrder: false,
   orderId: null,
   orderList: [],
   orderDetails: null,
@@ -51,6 +52,25 @@ export const getOrderDetails = createAsyncThunk(
     );
 
     return response.data;
+  },
+);
+
+export const cancelOrderByUser = createAsyncThunk(
+  "/order/cancelOrderByUser",
+  async ({ orderId, userId, customerEmail }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/shop/order/cancel/${orderId}`,
+        {
+          userId,
+          customerEmail,
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "Unable to cancel order." });
+    }
   },
 );
 
@@ -107,6 +127,19 @@ const shoppingOrderSlice = createSlice({
       .addCase(getOrderDetails.rejected, (state) => {
         state.isLoading = false;
         state.orderDetails = null;
+      })
+      .addCase(cancelOrderByUser.pending, (state) => {
+        state.isCancellingOrder = true;
+      })
+      .addCase(cancelOrderByUser.fulfilled, (state, action) => {
+        state.isCancellingOrder = false;
+        state.orderDetails = action.payload.data;
+        state.orderList = state.orderList.map((order) =>
+          order?._id === action.payload.data?._id ? action.payload.data : order
+        );
+      })
+      .addCase(cancelOrderByUser.rejected, (state) => {
+        state.isCancellingOrder = false;
       });
   },
 });

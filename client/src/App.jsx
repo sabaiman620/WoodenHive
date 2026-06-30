@@ -24,6 +24,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PaymentSuccessPage from "./pages/shopping-view/payment-success";
 import SearchProducts from "./pages/shopping-view/search";
 import ProductDetailsPage from "./pages/shopping-view/product-details";
+import PrivacyPolicy from "./pages/shopping-view/privacy-policy";
+import ShippingReturns from "./pages/shopping-view/shipping-returns";
+import WarrantyCare from "./pages/shopping-view/warranty-care";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -91,6 +94,9 @@ function App() {
           <Route path="payment-success" element={<PaymentSuccessPage />} />
           <Route path="search" element={<SearchProducts />} />
           <Route path="product/:productId" element={<ProductDetailsPage />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="shipping-returns" element={<ShippingReturns />} />
+          <Route path="warranty-care" element={<WarrantyCare />} />
         </Route>
         <Route path="/unauth-page" element={<UnauthPage />} />
         <Route path="*" element={<NotFound />} />

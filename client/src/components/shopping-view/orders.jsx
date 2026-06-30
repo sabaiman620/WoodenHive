@@ -13,31 +13,162 @@ import {
 import ShoppingOrderDetailsView from "./order-details";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  cancelOrderByUser,
   getAllOrdersByUserId,
   getGuestOrdersByIdAndEmail,
   getOrderDetails,
   resetOrderDetails,
 } from "@/store/shop/order-slice";
 import { Badge } from "../ui/badge";
+import { useToast } from "../ui/use-toast";
 import { 
   getOrCreateGuestId, 
   createNewGuestSession, 
   getGuestEmail 
 } from "@/lib/utils";
 
+const CANCELLATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function getRemainingCancellationMs(orderDate, currentTime) {
+  if (!orderDate) {
+    return 0;
+  }
+
+  const orderTime = new Date(orderDate).getTime();
+
+  if (Number.isNaN(orderTime)) {
+    return 0;
+  }
+
+  return Math.max(0, CANCELLATION_WINDOW_MS - (currentTime - orderTime));
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) {
+    return "Expired";
+  }
+
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+  return `${hours}:${minutes}:${seconds}`;
+}
+
 function ShoppingOrders() {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [currentGuestId, setCurrentGuestId] = useState(null);
   const [guestEmail, setGuestEmailState] = useState(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { orderList, orderDetails } = useSelector((state) => state.shopOrder);
+  const { orderList, orderDetails, isLoading, isCancellingOrder } = useSelector((state) => state.shopOrder);
+  const { toast } = useToast();
   
   const effectiveUserId = user?.id || currentGuestId || getOrCreateGuestId();
   const effectiveEmail = guestEmail || getGuestEmail();
 
   function handleFetchOrderDetails(getId) {
+    setOpenDetailsDialog(true);
     dispatch(getOrderDetails(getId));
+  }
+
+  function canCancelOrder(orderItem) {
+    if (!orderItem) {
+      return false;
+    }
+
+    if (["cancelled", "delivered"].includes(orderItem.orderStatus)) {
+      return false;
+    }
+
+    return getRemainingCancellationMs(orderItem.orderDate, currentTime) > 0;
+  }
+
+  function refreshOrders() {
+    if (user) {
+      dispatch(getAllOrdersByUserId(user.id));
+      return;
+    }
+
+    if (effectiveUserId) {
+      dispatch(
+        getGuestOrdersByIdAndEmail({
+          guestId: effectiveUserId,
+          email: effectiveEmail || "no-email",
+        })
+      );
+    }
+  }
+
+  function handleCancelOrder() {
+    if (!orderDetails?._id) {
+      return;
+    }
+
+    const isConfirmed = window.confirm("Are you sure you want to cancel this order?");
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    dispatch(
+      cancelOrderByUser({
+        orderId: orderDetails._id,
+        userId: effectiveUserId,
+        customerEmail: effectiveEmail,
+      })
+    ).then((data) => {
+      if (data?.payload?.success) {
+        toast({
+          title: data.payload.message || "Order cancelled successfully.",
+        });
+        refreshOrders();
+        dispatch(getOrderDetails(orderDetails._id));
+      } else {
+        toast({
+          title: data?.payload?.message || "Unable to cancel order.",
+          variant: "destructive",
+        });
+      }
+    });
+  }
+
+  function handleCancelOrderFromList(orderItem) {
+    if (!orderItem?._id || !canCancelOrder(orderItem)) {
+      return;
+    }
+
+    const isConfirmed = window.confirm("Are you sure you want to cancel this order?");
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    dispatch(
+      cancelOrderByUser({
+        orderId: orderItem._id,
+        userId: effectiveUserId,
+        customerEmail: effectiveEmail,
+      })
+    ).then((data) => {
+      if (data?.payload?.success) {
+        toast({
+          title: data.payload.message || "Order cancelled successfully.",
+        });
+        refreshOrders();
+
+        if (orderDetails?._id === orderItem._id) {
+          dispatch(getOrderDetails(orderItem._id));
+        }
+      } else {
+        toast({
+          title: data?.payload?.message || "Unable to cancel order.",
+          variant: "destructive",
+        });
+      }
+    });
   }
 
   // Create new guest session and refresh orders
@@ -89,10 +220,12 @@ function ShoppingOrders() {
   }, [dispatch, effectiveUserId, effectiveEmail, user]);
 
   useEffect(() => {
-    if (orderDetails !== null) setOpenDetailsDialog(true);
-  }, [orderDetails]);
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
 
-  console.log(orderDetails, "orderDetails");
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   return (
     <Card>
@@ -137,24 +270,56 @@ function ShoppingOrders() {
         </div>
       </CardHeader>
       <CardContent>
+        <Dialog
+          open={openDetailsDialog}
+          onOpenChange={(isOpen) => {
+            setOpenDetailsDialog(isOpen);
+            if (!isOpen) {
+              dispatch(resetOrderDetails());
+            }
+          }}
+        >
+          <ShoppingOrderDetailsView
+            orderDetails={orderDetails}
+            isLoading={isLoading}
+            isCancellingOrder={isCancellingOrder}
+            onCancelOrder={handleCancelOrder}
+            currentTime={currentTime}
+          />
+        </Dialog>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Product</TableHead>
               <TableHead>Order ID</TableHead>
               <TableHead>Order Date</TableHead>
               <TableHead>Order Status</TableHead>
               <TableHead>Order Price</TableHead>
-              <TableHead>
-                <span className="sr-only">Details</span>
-              </TableHead>
+              <TableHead>Cancel In</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orderList && orderList.length > 0 ? (
               orderList.map((orderItem) => (
                 <TableRow key={orderItem?._id}>
+                  <TableCell>
+                    {orderItem?.cartItems?.[0]?.image ? (
+                      <img
+                        src={orderItem.cartItems[0].image}
+                        alt={orderItem?.cartItems?.[0]?.title || "Product"}
+                        className="h-14 w-14 rounded-md border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 items-center justify-center rounded-md border bg-slate-100 text-[10px] text-muted-foreground">
+                        No image
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>{orderItem?._id}</TableCell>
-                  <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                  <TableCell>
+                    {orderItem?.orderDate ? orderItem.orderDate.split("T")[0] : "-"}
+                  </TableCell>
                     <TableCell>
                       <Badge
                         className={`py-1 px-3 ${
@@ -170,26 +335,37 @@ function ShoppingOrders() {
                     </TableCell>
                   <TableCell>Rs {orderItem?.totalAmount}</TableCell>
                   <TableCell>
-                    <Dialog
-                      open={openDetailsDialog}
-                      onOpenChange={() => {
-                        setOpenDetailsDialog(false);
-                        dispatch(resetOrderDetails());
-                      }}
-                    >
-                      <Button
-                        onClick={() => handleFetchOrderDetails(orderItem?._id)}
-                      >
+                    {canCancelOrder(orderItem) ? (
+                      <Badge variant="outline" className="font-mono">
+                        {formatCountdown(
+                          getRemainingCancellationMs(orderItem.orderDate, currentTime)
+                        )}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Not available</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => handleFetchOrderDetails(orderItem?._id)}>
                         View Details
                       </Button>
-                      <ShoppingOrderDetailsView orderDetails={orderDetails} />
-                    </Dialog>
+                      {canCancelOrder(orderItem) ? (
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleCancelOrderFromList(orderItem)}
+                          disabled={isCancellingOrder}
+                        >
+                          {isCancellingOrder ? "Cancelling..." : "Cancel"}
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
+                <TableCell colSpan={7} className="text-center py-6">
                   No orders found for this account.
                 </TableCell>
               </TableRow>
