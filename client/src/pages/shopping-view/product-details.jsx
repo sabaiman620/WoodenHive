@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ShoppingProductTile from "@/components/shopping-view/product-tile";
 import { getOrCreateGuestId } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
+import { gtmAddToCart, gtmViewItem } from "@/lib/gtm";
 
 function ProductDetailsPage() {
   const { productId, id } = useParams();
@@ -62,6 +63,8 @@ function ProductDetailsPage() {
       setMainImage(
         (productDetails.images && productDetails.images[0]) || productDetails.image || ""
       );
+      // GTM: fire view_item once product details are available
+      gtmViewItem({ product: productDetails });
 
       // Fetch related products
       if (productDetails.category) {
@@ -177,6 +180,8 @@ function ProductDetailsPage() {
         showToast({
           title: "Product added to cart",
         });
+        // GTM: productDetails is in scope here
+        gtmAddToCart({ product: productDetails, quantity: 1, source: "product_detail" });
       }
     });
   }

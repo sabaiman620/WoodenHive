@@ -12,6 +12,7 @@ import { fetchCartItems, clearCart, setCartOpen } from "@/store/shop/cart-slice"
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { getOrCreateGuestId, setGuestEmail } from "@/lib/utils";
+import { gtmInitiateCheckout, gtmPurchase } from "@/lib/gtm";
 
 function ShoppingCheckout() {
   const { cartItems } = useSelector((state) => state.shopCart);
@@ -55,7 +56,16 @@ function ShoppingCheckout() {
 
   useEffect(() => {
     dispatch(setCartOpen(false));
-  }, [dispatch]);
+    // GTM: InitiateCheckout — cart items may not be populated yet on first mount;
+    // the effect re-runs if cartItems changes, so we guard with length check.
+    if (cartItems?.items?.length > 0) {
+      gtmInitiateCheckout({
+        cartItems: cartItems.items,
+        totalAmount: totalCartAmount,
+        shippingCost,
+      });
+    }
+  }, [dispatch, cartItems, totalCartAmount, shippingCost]);
 
   useEffect(() => {
     dispatch(getShippingCost());
@@ -173,6 +183,13 @@ function ShoppingCheckout() {
     dispatch(createNewOrder(orderData)).then((data) => {
       console.log(data, "sangam");
       if (data?.payload?.success) {
+        // GTM: purchase — orderId comes from API response
+        gtmPurchase({
+          orderData,
+          orderId: data.payload.data?._id || "",
+          shippingCost,
+        });
+
         // Store guest email for future order tracking
         if (!user) {
           setGuestEmail(customerEmail);

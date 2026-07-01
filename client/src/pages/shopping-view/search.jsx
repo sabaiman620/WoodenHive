@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { getOrCreateGuestId } from "@/lib/utils";
+import { gtmAddToCart } from "@/lib/gtm";
 
 function SearchProducts() {
   const [keyword, setKeyword] = useState("");
@@ -72,6 +73,9 @@ function SearchProducts() {
         toast({
           title: "Product is added to cart",
         });
+        // GTM: find product object from searchResults
+        const product = searchResults?.find((p) => p._id === getCurrentProductId);
+        if (product) gtmAddToCart({ product, quantity: 1, source: "search" });
       }
     });
   }

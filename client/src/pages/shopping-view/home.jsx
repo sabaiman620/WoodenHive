@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { addToCart, fetchCartItems } from "@/store/shop/cart-slice";
 import { useToast } from "@/components/ui/use-toast";
 import { getOrCreateGuestId } from "@/lib/utils";
+import { gtmAddToCart } from "@/lib/gtm";
 
 /* ================= HERO IMAGES ================= */
 const heroImages = [
@@ -71,6 +72,9 @@ function ShoppingHome() {
       if (data?.payload?.success) {
         dispatch(fetchCartItems(userId));
         toast({ title: "Product is added to cart" });
+        // GTM: find product object from productList to get price/title
+        const product = productList.find((p) => p._id === productId);
+        if (product) gtmAddToCart({ product, quantity: 1, source: "home" });
       }
     });
   }

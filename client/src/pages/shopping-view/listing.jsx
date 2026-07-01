@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { getOrCreateGuestId } from "@/lib/utils";
+import { gtmAddToCart } from "@/lib/gtm";
 
 function createSearchParamsHelper(filterParams) {
   const queryParams = [];
@@ -119,6 +120,9 @@ function ShoppingListing() {
         toast({
           title: "Product is added to cart",
         });
+        // GTM: find the product object from productList
+        const product = productList?.find((p) => p._id === getCurrentProductId);
+        if (product) gtmAddToCart({ product, quantity: 1, source: "listing" });
       } else {
         console.error("Failed to add to cart:", data);
         toast({
