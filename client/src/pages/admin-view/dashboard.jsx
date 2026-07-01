@@ -1,6 +1,3 @@
-import ProductImageUpload from "@/components/admin-view/image-upload";
-import { Button } from "@/components/ui/button";
-import { addFeatureImage, getFeatureImages } from "@/store/common-slice";
 import { getShippingCost, setShippingCost } from "@/store/admin/settings-slice";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,30 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllReviewsForAdmin } from "@/store/admin/review-slice";
 
 function AdminDashboard() {
-  const [imageFile, setImageFile] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
-  const [imageLoadingState, setImageLoadingState] = useState(false);
   const dispatch = useDispatch();
-  const { featureImageList } = useSelector((state) => state.commonFeature);
   const { reviewList } = useSelector((state) => state.adminReview);
   const { shippingCost } = useSelector((state) => state.adminSettings || { shippingCost: 0 });
   const [localShipping, setLocalShipping] = useState(String(shippingCost || "0"));
   const { toast } = useToast();
 
-  console.log(uploadedImageUrl, "uploadedImageUrl");
-
-  function handleUploadFeatureImage() {
-    dispatch(addFeatureImage(uploadedImageUrl)).then((data) => {
-      if (data?.payload?.success) {
-        dispatch(getFeatureImages());
-        setImageFile(null);
-        setUploadedImageUrl("");
-      }
-    });
-  }
-
   useEffect(() => {
-    dispatch(getFeatureImages());
     dispatch(getAllReviewsForAdmin());
     dispatch(getShippingCost()).then((res) => {
       setLocalShipping(String(res?.payload?.data?.value ?? "0"));
@@ -54,30 +34,15 @@ function AdminDashboard() {
 
   return (
     <div>
-      <ProductImageUpload
-        imageFile={imageFile}
-        setImageFile={setImageFile}
-        uploadedImageUrl={uploadedImageUrl}
-        setUploadedImageUrl={setUploadedImageUrl}
-        setImageLoadingState={setImageLoadingState}
-        imageLoadingState={imageLoadingState}
-        isCustomStyling={true}
-        // isEditMode={currentEditedId !== null}
-      />
-      <Button onClick={handleUploadFeatureImage} className="mt-5 w-full">
-        Upload
-      </Button>
-      <div className="flex flex-col gap-4 mt-5">
-        {featureImageList && featureImageList.length > 0
-          ? featureImageList.map((featureImgItem) => (
-              <div className="relative">
-                <img
-                  src={featureImgItem.image}
-                  className="w-full h-[300px] object-cover rounded-t-lg"
-                />
-              </div>
-            ))
-          : null}
+      <div className="mt-4 rounded-lg border bg-white p-4">
+        <h3 className="mb-3 text-lg font-semibold">Dashboard Banner</h3>
+        <div className="relative overflow-hidden rounded-lg border">
+          <img
+            src="/hero/slider2.jpg"
+            alt="Wood products banner"
+            className="h-[300px] w-full object-cover object-center"
+          />
+        </div>
       </div>
       <div className="grid gap-4 mt-8 md:grid-cols-3">
         <Card>

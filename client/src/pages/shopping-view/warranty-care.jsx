@@ -7,81 +7,101 @@ function WarrantyCare() {
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
       {/* Content */}
       <div className="flex-1 mx-auto max-w-5xl px-6 py-8 w-full">
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Title with Back Button */}
-          <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="flex items-center justify-between gap-4 mb-2">
             <h1 className="text-3xl font-bold text-gray-900">Warranty & Care</h1>
             <button
               onClick={() => navigate(-1)}
-              className="mt-1 text-sm font-medium text-gray-600 hover:text-gray-900 whitespace-nowrap"
+              className="text-sm text-gray-500 hover:text-gray-800"
             >
-              ← Back
             </button>
           </div>
 
-          <div className="space-y-4 text-gray-700">
-            {/* Warranty Coverage */}
-            <div className="space-y-2">
-              <h3 className="text-base font-bold text-gray-900">Warranty Coverage</h3>
-              <p className="text-sm leading-relaxed">
-                All WoodenHive products come with a <strong>1-year warranty</strong> against manufacturing defects including structural failures and joint separation. Does not cover normal wear, accidents, or misuse.
-              </p>
+          <div className="space-y-6 text-gray-700">
+
+            <div className="space-y-4 border-t border-gray-200 pt-5">
+              <h3 className="text-lg font-bold text-gray-900">Care Instructions</h3>
+
+              <div className="space-y-1">
+                <p className="text-[15px] font-semibold text-gray-900">Daily Care</p>
+                <p className="text-[15px] leading-7 text-gray-700">
+                  Dust your wooden pieces regularly using a soft, dry cloth to prevent buildup of
+                  dirt and grime. Wipe any spills immediately with a slightly damp cloth and avoid
+                  placing hot items directly on surfaces — always use coasters or trivets to
+                  protect the finish.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[15px] font-semibold text-gray-900">Weekly / Monthly Maintenance</p>
+                <p className="text-[15px] leading-7 text-gray-700">
+                  Clean surfaces with a wood-specific cleaner or mild soap solution, then dry
+                  thoroughly right away to prevent moisture absorption. Apply a quality wood oil
+                  or polish every 3–6 months to restore the natural sheen and protect the finish
+                  from drying out.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[15px] font-semibold text-gray-900">Storage</p>
+                <p className="text-[15px] leading-7 text-gray-700">
+                  Store wooden items in a dry, temperature-controlled space — avoid damp
+                  basements or hot attics. Cover with a breathable cloth to keep dust off, and
+                  allow 24–48 hours of acclimatization when moving pieces between different
+                  environments or temperatures.
+                </p>
+              </div>
             </div>
 
-            {/* Care Instructions */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <h3 className="text-base font-bold text-gray-900">Care Instructions</h3>
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-900">Daily Care</p>
-                <p className="text-xs leading-relaxed">Dust with soft cloth. Wipe spills immediately. Avoid hot items directly on surfaces.</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-900">Weekly/Monthly</p>
-                <p className="text-xs leading-relaxed">Clean with wood cleaner. Dry immediately. Apply oil/polish every 3–6 months.</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-900">Seasonal Care</p>
-                <p className="text-xs leading-relaxed">Maintain humidity 35–55%. Avoid direct sunlight and heat vents. Use furniture pads.</p>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-900">Storage</p>
-                <p className="text-xs leading-relaxed">Keep in dry, temperature-controlled areas. Cover with breathable cloth. Allow 24–48h acclimatization.</p>
-              </div>
-            </div>
-
-            {/* Quick Tips */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <h3 className="text-base font-bold text-gray-900">Product-Specific Tips</h3>
-              <ul className="space-y-1 text-xs leading-relaxed">
-                <li><strong>Tables & Desks:</strong> Use placemats and coasters. No dragging heavy objects.</li>
-                <li><strong>Chairs & Stools:</strong> Check screws regularly. Don't lean back. Clean cushions separately.</li>
-                <li><strong>Cabinets & Shelving:</strong> Don't overload. Dust interiors monthly. Keep level.</li>
-                <li><strong>Decorative Pieces:</strong> Avoid direct sunlight. Keep away from moisture.</li>
+            {/* Product-Specific Tips */}
+            <div className="space-y-4 border-t border-gray-200 pt-5">
+              <h3 className="text-lg font-bold text-gray-900">Product-Specific Tips</h3>
+              <ul className="space-y-4 text-[15px]">
+                <li className="leading-7">
+                  <span className="font-semibold text-gray-900">Vases & Flower Holders — </span>
+                  Do not fill wooden vases directly with water. Always use a glass or plastic
+                  insert to hold water for flowers. Wipe any moisture from the outer surface
+                  immediately to prevent water stains, swelling, or finish damage.
+                </li>
+            
+                <li className="leading-7">
+                  <span className="font-semibold text-gray-900">Wall Art & Calligraphy Pieces — </span>
+                  Mount on a dry, stable wall away from direct sunlight, moisture, or kitchen
+                  steam that can cause warping or fading. Dust gently with a soft brush or dry
+                  cloth. Avoid using liquid cleaners on carved or painted wall art surfaces.
+                </li>
+                <li className="leading-7">
+                  <span className="font-semibold text-gray-900">Wooden Clocks — </span>
+                  Keep clocks away from damp walls and areas with high humidity. Replace
+                  batteries before they run out to avoid battery leakage damage. Clean the
+                  clock face with a dry cloth only and avoid pressing hard on the hands or frame.
+                </li>
+                <li className="leading-7">
+                  <span className="font-semibold text-gray-900">Trays & Serving Items — </span>
+                  Wooden trays are designed for dry use only. Avoid placing wet items directly
+                  on the surface for extended periods. Clean with a lightly damp cloth and dry
+                  immediately. Apply food-safe wood oil periodically to maintain the finish.
+                </li>
+            
               </ul>
             </div>
 
             {/* Warranty Claims */}
-            <div className="space-y-2 border-t border-gray-200 pt-3">
-              <h3 className="text-base font-bold text-gray-900">Warranty Claims</h3>
-              <p className="text-xs leading-relaxed">
-                Contact us within 30 days of discovering a defect with photos and order number.
+            <div className="space-y-2 border-t border-gray-200 pt-5">
+              <h3 className="text-lg font-bold text-gray-900">Warranty Claims</h3>
+              <p className="text-[15px] leading-7">
+                To file a warranty claim, contact us within 30 days of discovering the defect.
+                Please include clear photos of the issue along with your order number so our
+                team can assess and resolve your claim promptly.
               </p>
-              <p className="text-xs leading-relaxed">
+              <p className="text-[15px] leading-7">
                 Email:{" "}
-                <a
-                  href="mailto:info@woodenhive.com"
-                  className="font-semibold text-blue-600 hover:text-blue-700 underline"
-                >
+                <a href="mailto:info@woodenhive.com" className="text-blue-600 hover:text-blue-700 underline">
                   info@woodenhive.com
                 </a>
-              </p>
-              <p className="text-xs leading-relaxed">
-                Phone:{" "}
-                <a href="tel:+923110719503" className="font-semibold text-blue-600 hover:text-blue-700 underline">
+                {" "}· Phone:{" "}
+                <a href="tel:+923110719503" className="text-blue-600 hover:text-blue-700 underline">
                   +92 311 071 9503
                 </a>
               </p>
@@ -90,9 +110,8 @@ function WarrantyCare() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 bg-white py-3 px-6 text-center">
-        <p className="text-xs text-gray-600">© {new Date().getFullYear()} WoodenHive. All rights reserved.</p>
+      <div className="border-t border-gray-200 py-3 px-6 text-center">
+        <p className="text-xs text-gray-500">© {new Date().getFullYear()} WoodenHive. All rights reserved.</p>
       </div>
     </div>
   );
