@@ -1,4 +1,4 @@
-import { LogOut, Menu, UserCog } from "lucide-react";
+import { LogOut, Menu, UserCog, UserCircle2 } from "lucide-react";
 import {
   Link,
   useLocation,
@@ -17,7 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "../ui/avatar";
 import { logoutUser } from "@/store/auth-slice";
 import UserCartWrapper from "./cart-wrapper";
 import { useEffect, useState } from "react";
@@ -95,9 +94,13 @@ function HeaderRightContent() {
       {user ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Avatar>
-              <AvatarFallback>{(user.name || "U")[0]}</AvatarFallback>
-            </Avatar>
+            <button
+              type="button"
+              className="cursor-pointer text-muted-foreground transition hover:text-foreground"
+              aria-label="Open account menu"
+            >
+              <UserCircle2 className="h-7 w-7" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuLabel>{user.name}</DropdownMenuLabel>

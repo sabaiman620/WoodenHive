@@ -54,6 +54,19 @@ function ShoppingCheckout() {
     return "";
   }
 
+  const totalCartAmount =
+    cartItems && cartItems.items && cartItems.items.length > 0
+      ? cartItems.items.reduce(
+          (sum, currentItem) =>
+            sum +
+            (currentItem?.salePrice > 0
+              ? currentItem?.salePrice
+              : currentItem?.price) *
+              currentItem?.quantity,
+          0
+        )
+      : 0;
+
   useEffect(() => {
     dispatch(setCartOpen(false));
     // GTM: InitiateCheckout — cart items may not be populated yet on first mount;
@@ -72,19 +85,6 @@ function ShoppingCheckout() {
   }, [dispatch]);
 
   console.log(currentSelectedAddress, "cartItems");
-
-  const totalCartAmount =
-    cartItems && cartItems.items && cartItems.items.length > 0
-      ? cartItems.items.reduce(
-          (sum, currentItem) =>
-            sum +
-            (currentItem?.salePrice > 0
-              ? currentItem?.salePrice
-              : currentItem?.price) *
-              currentItem?.quantity,
-          0
-        )
-      : 0;
 
   function handlePlaceOrder() {
     if (!cartItems || !cartItems.items || cartItems.items.length === 0) {

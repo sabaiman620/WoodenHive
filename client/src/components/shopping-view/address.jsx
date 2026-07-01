@@ -37,6 +37,8 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
   const { addressList } = useSelector((state) => state.shopAddress);
   const { toast } = useToast();
   const effectiveUserId = user?.id || getOrCreateGuestId();
+  const currentSavedAddress = addressList?.[0] || null;
+  const showAccountSummary = typeof selectedId === "undefined";
 
   function resetValidationState() {
     setPhoneError("");
@@ -247,6 +249,44 @@ function Address({ setCurrentSelectedAddress, selectedId }) {
 
   return (
     <Card>
+      {showAccountSummary ? (
+        <div className="space-y-4 border-b p-5">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Current Account Details</h3>
+            <p className="text-sm text-muted-foreground">
+              Logged in as {user?.userName || "Guest"}
+              {user?.email ? ` • ${user.email}` : ""}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Account</p>
+              <p className="mt-1 text-sm font-medium text-gray-900">
+                {user?.userName || "Guest User"}
+              </p>
+              <p className="text-sm text-gray-600">{user?.email || "No email available"}</p>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Current Saved Address</p>
+              {currentSavedAddress ? (
+                <div className="mt-1 space-y-1 text-sm text-gray-700">
+                  <p>{currentSavedAddress.address}</p>
+                  <p>{currentSavedAddress.city}</p>
+                  <p>Pincode: {currentSavedAddress.pincode}</p>
+                  <p>Phone: {currentSavedAddress.phone}</p>
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-gray-600">
+                  No saved address yet. Add your first address below.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mb-5 p-3 grid grid-cols-1 sm:grid-cols-2  gap-2">
         {addressList && addressList.length > 0
           ? addressList.map((singleAddressItem) => (
