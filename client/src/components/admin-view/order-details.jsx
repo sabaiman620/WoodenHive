@@ -141,6 +141,16 @@ function AdminOrderDetailsView({ orderDetails, isLoading }) {
                         <span className="text-sm text-muted-foreground">
                           Price: Rs {item.price}
                         </span>
+                        {item.color ? (
+                          <span className="text-sm text-muted-foreground capitalize">
+                            Color: <span className="font-medium text-slate-800">{item.color}</span>
+                          </span>
+                        ) : null}
+                        {item.size ? (
+                          <span className="text-sm text-muted-foreground">
+                            Size: <span className="font-medium text-slate-800">{item.size}</span>
+                          </span>
+                        ) : null}
                       </div>
                     </li>
                   ))
@@ -218,6 +228,8 @@ AdminOrderDetailsView.propTypes = {
         quantity: PropTypes.number,
         price: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         image: PropTypes.string,
+        color: PropTypes.string,
+        size: PropTypes.string,
       })
     ),
     addressInfo: PropTypes.shape({

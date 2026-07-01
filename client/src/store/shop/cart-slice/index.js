@@ -10,15 +10,16 @@ const initialState = {
 
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
-  async ({ userId, productId, quantity }, { rejectWithValue }) => {
+  async ({ userId, productId, quantity, color }, { rejectWithValue }) => {
     try {
-      console.log("Adding to cart:", { userId, productId, quantity });
+      console.log("Adding to cart:", { userId, productId, quantity, color });
       const response = await axios.post(
         "http://localhost:5000/api/shop/cart/add",
         {
           userId,
           productId,
           quantity,
+          color,
         },
       );
       console.log("Cart API response:", response.data);

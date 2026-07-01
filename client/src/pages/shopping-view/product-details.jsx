@@ -36,6 +36,7 @@ function ProductDetailsPage() {
   const imageContainerRef = useRef(null);
   const dragMovedRef = useRef(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [selectedColor, setSelectedColor] = useState("");
 
   const productDetails = useSelector((state) => state.shopProducts?.productDetails) || null;
   const isLoading = useSelector((state) => state.shopProducts?.isLoading) || false;
@@ -63,6 +64,7 @@ function ProductDetailsPage() {
       setMainImage(
         (productDetails.images && productDetails.images[0]) || productDetails.image || ""
       );
+      setSelectedColor("");
       // GTM: fire view_item once product details are available
       gtmViewItem({ product: productDetails });
 
@@ -149,6 +151,15 @@ function ProductDetailsPage() {
     const getCartItems = cartItems?.items || [];
     const getCurrentProductId = productDetails?._id;
     const getTotalStock = productDetails?.totalStock;
+    const hasColorOptions = (productDetails?.colors || []).length > 0;
+
+    if (hasColorOptions && !selectedColor) {
+      showToast({
+        title: "Please select a color first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (getCartItems.length) {
       const indexOfCurrentItem = getCartItems.findIndex(
@@ -173,6 +184,7 @@ function ProductDetailsPage() {
         userId,
         productId: getCurrentProductId,
         quantity: 1,
+        color: selectedColor,
       })
     ).then((data) => {
       if (data?.payload?.success) {
@@ -348,17 +360,22 @@ function ProductDetailsPage() {
               {/* Colors */}
               {productDetails?.colors && productDetails.colors.length > 0 && (
                 <div className="mb-4">
-                  <div className="text-sm font-semibold text-gray-700 mb-2">Color</div>
-                  <div className="flex gap-2">
+                  <div className="text-sm font-semibold text-gray-700 mb-2">
+                    Color{selectedColor ? <span className="ml-2 font-normal text-gray-500">: {selectedColor}</span> : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     {productDetails.colors.map((c, i) => (
                       <button
                         key={i}
                         type="button"
-                        className="px-3 py-1 rounded border text-sm"
-                        style={{ background: c.toLowerCase(), color: '#fff' }}
-                        title={c}
+                        onClick={() => setSelectedColor(c)}
+                        className={`px-4 py-1.5 rounded border text-sm font-medium transition-all ${
+                          selectedColor === c
+                            ? "border-gray-900 bg-gray-900 text-white"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-gray-600"
+                        }`}
                       >
-                        <span className="hidden sm:inline">{c}</span>
+                        {c}
                       </button>
                     ))}
                   </div>

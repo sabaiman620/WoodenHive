@@ -299,6 +299,16 @@ function ShoppingOrderDetailsView({
                         <Badge variant="outline" className="rounded-full px-3 py-1">
                           Rs {item?.price}
                         </Badge>
+                        {item?.color ? (
+                          <Badge variant="outline" className="rounded-full px-3 py-1 capitalize">
+                            Color: {item.color}
+                          </Badge>
+                        ) : null}
+                        {item?.size ? (
+                          <Badge variant="outline" className="rounded-full px-3 py-1">
+                            Size: {item.size}
+                          </Badge>
+                        ) : null}
                       </div>
                     </div>
                   </li>
@@ -342,6 +352,8 @@ ShoppingOrderDetailsView.propTypes = {
           PropTypes.string,
         ]),
         image: PropTypes.string,
+        color: PropTypes.string,
+        size: PropTypes.string,
       })
     ),
     addressInfo: PropTypes.shape({

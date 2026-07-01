@@ -38,6 +38,8 @@ const generateOrderConfirmationHTML = (orderDetails) => {
           <div>
             <h4 style="margin: 0; font-size: 16px; font-weight: 600;">${item.title}</h4>
             <p style="margin: 0; color: #666; font-size: 14px;">Quantity: ${item.quantity}</p>
+            ${item.color ? `<p style="margin: 0; color: #666; font-size: 14px; text-transform: capitalize;">Color: ${item.color}</p>` : ""}
+            ${item.size ? `<p style="margin: 0; color: #666; font-size: 14px;">Size: ${item.size}</p>` : ""}
           </div>
         </div>
       </td>
@@ -157,6 +159,12 @@ const generateOrderConfirmationHTML = (orderDetails) => {
 const sendOrderConfirmationEmail = async (customerEmail, orderDetails) => {
   try {
     const transporter = createBrevoTransporter();
+    const itemsText = (orderDetails.cartItems || [])
+      .map(
+        (item) =>
+          `- ${item.title} | Qty: ${item.quantity}${item.color ? ` | Color: ${item.color}` : ""}${item.size ? ` | Size: ${item.size}` : ""} | Rs ${item.price}`,
+      )
+      .join("\n");
 
     const mailOptions = {
       from: {
@@ -176,6 +184,9 @@ const sendOrderConfirmationEmail = async (customerEmail, orderDetails) => {
         Order Total: Rs ${orderDetails.totalAmount}
         Payment Method: ${orderDetails.paymentMethod}
         ${orderDetails.paymentId ? `Transaction ID: ${orderDetails.paymentId}` : ""}
+
+        Items Ordered:
+        ${itemsText}
         
         Your order will be processed within 1-2 business days and you'll receive tracking information once shipped.
         

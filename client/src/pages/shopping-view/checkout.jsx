@@ -154,6 +154,8 @@ function ShoppingCheckout() {
             ? singleCartItem?.salePrice
             : singleCartItem?.price,
         quantity: singleCartItem?.quantity,
+        color: singleCartItem?.color || "",
+        size: singleCartItem?.size || "",
       })),
       addressInfo: {
         addressId: currentSelectedAddress?._id,
