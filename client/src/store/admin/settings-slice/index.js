@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { apiUrl } from "@/lib/api";
 
 const initialState = {
   isLoading: false,
@@ -10,7 +11,7 @@ export const getShippingCost = createAsyncThunk(
   "/settings/getShippingCost",
   async () => {
     const res = await axios.get(
-      `http://localhost:5000/api/admin/settings/shippingCost`
+        apiUrl("/api/admin/settings/shippingCost")
     );
     return res.data;
   }
@@ -20,7 +21,7 @@ export const setShippingCost = createAsyncThunk(
   "/settings/setShippingCost",
   async (value) => {
     const res = await axios.put(
-      `http://localhost:5000/api/admin/settings/shippingCost`,
+        apiUrl("/api/admin/settings/shippingCost"),
       { value }
     );
     return res.data;

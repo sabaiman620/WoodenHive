@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { apiUrl } from "@/lib/api";
 
 const initialState = {
   orderList: [],
@@ -11,7 +12,7 @@ export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/getAllOrdersForAdmin",
   async () => {
     const response = await axios.get(
-      `http://localhost:5000/api/admin/orders/get`,
+        apiUrl("/api/admin/orders/get"),
     );
 
     return response.data;
@@ -22,7 +23,7 @@ export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/getOrderDetailsForAdmin",
   async (id) => {
     const response = await axios.get(
-      `http://localhost:5000/api/admin/orders/details/${id}`,
+        apiUrl(`/api/admin/orders/details/${id}`),
     );
 
     return response.data;
@@ -43,7 +44,7 @@ export const updateOrderStatus = createAsyncThunk(
     }
 
     const response = await axios.put(
-      `http://localhost:5000/api/admin/orders/update/${id}`,
+        apiUrl(`/api/admin/orders/update/${id}`),
       payload,
     );
 
@@ -55,7 +56,7 @@ export const deleteOrder = createAsyncThunk(
   "/order/deleteOrder",
   async (id) => {
     const response = await axios.delete(
-      `http://localhost:5000/api/admin/orders/delete/${id}`,
+        apiUrl(`/api/admin/orders/delete/${id}`),
     );
 
     return response.data;

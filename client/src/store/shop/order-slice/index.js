@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { apiUrl } from "@/lib/api";
 
 const initialState = {
   isLoading: false,
@@ -13,7 +14,7 @@ export const createNewOrder = createAsyncThunk(
   "/order/createNewOrder",
   async (orderData) => {
     const response = await axios.post(
-      "http://localhost:5000/api/shop/order/create",
+      apiUrl("/api/shop/order/create"),
       orderData,
     );
 
@@ -25,7 +26,7 @@ export const getAllOrdersByUserId = createAsyncThunk(
   "/order/getAllOrdersByUserId",
   async (userId) => {
     const response = await axios.get(
-      `http://localhost:5000/api/shop/order/list/${userId}`,
+      apiUrl(`/api/shop/order/list/${userId}`),
     );
 
     return response.data;
@@ -37,7 +38,7 @@ export const getGuestOrdersByIdAndEmail = createAsyncThunk(
   "/order/getGuestOrdersByIdAndEmail",
   async ({ guestId, email }) => {
     const response = await axios.get(
-      `http://localhost:5000/api/shop/order/guest/${guestId}/${encodeURIComponent(email)}`,
+      apiUrl(`/api/shop/order/guest/${guestId}/${encodeURIComponent(email)}`),
     );
 
     return response.data;
@@ -48,7 +49,7 @@ export const getOrderDetails = createAsyncThunk(
   "/order/getOrderDetails",
   async (id) => {
     const response = await axios.get(
-      `http://localhost:5000/api/shop/order/details/${id}`,
+      apiUrl(`/api/shop/order/details/${id}`),
     );
 
     return response.data;
@@ -60,7 +61,7 @@ export const cancelOrderByUser = createAsyncThunk(
   async ({ orderId, userId, customerEmail }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/shop/order/cancel/${orderId}`,
+        apiUrl(`/api/shop/order/cancel/${orderId}`),
         {
           userId,
           customerEmail,

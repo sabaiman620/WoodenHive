@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { apiUrl } from "@/lib/api";
 
 const initialState = {
   reviewList: [],
@@ -10,7 +11,7 @@ export const getAllReviewsForAdmin = createAsyncThunk(
   "/reviews/getAllReviewsForAdmin",
   async () => {
     const response = await axios.get(
-      "http://localhost:5000/api/admin/reviews/get",
+      apiUrl("/api/admin/reviews/get"),
     );
 
     return response.data;
@@ -21,7 +22,7 @@ export const updateReviewApprovalStatus = createAsyncThunk(
   "/reviews/updateReviewApprovalStatus",
   async ({ id, isApproved }) => {
     const response = await axios.put(
-      `http://localhost:5000/api/admin/reviews/update/${id}`,
+      apiUrl(`/api/admin/reviews/update/${id}`),
       { isApproved },
     );
 
@@ -33,7 +34,7 @@ export const deleteReviewForAdmin = createAsyncThunk(
   "/reviews/deleteReviewForAdmin",
   async (id) => {
     const response = await axios.delete(
-      `http://localhost:5000/api/admin/reviews/delete/${id}`,
+      apiUrl(`/api/admin/reviews/delete/${id}`),
     );
 
     return { ...response.data, deletedId: id };

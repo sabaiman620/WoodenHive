@@ -92,6 +92,8 @@ mongoose
 
 // -------------------------------
 const app = express();
+// app.set('trust proxy', 1);
+// mongoose.set('strictQuery', false);                 for production.............................
 const PORT = process.env.PORT || 5000;
 
 // -------------------------------
