@@ -101,7 +101,13 @@ const PORT = process.env.PORT || 5000;
 // -------------------------------
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [
+      "http://woodenhive.com",
+  "https://woodenhive.com",
+  "http://www.woodenhive.com",
+  "https://www.woodenhive.com",
+  "http://localhost:5173",
+    ],
     methods: ["GET", "POST", "DELETE", "PUT", "PATCH"],
     allowedHeaders: [
       "Content-Type",
