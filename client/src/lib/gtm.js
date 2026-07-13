@@ -1,35 +1,3 @@
-/**
- * GTM Ecommerce Helper — WoodenHive
- *
- * Single reusable module that:
- *  1. Ensures window.dataLayer exists (safe even without GTM container loaded)
- *  2. Provides one low-level push function (pushEvent)
- *  3. Exports four typed event builders that match the required payload shape:
- *       gtmAddToCart      — AddToCart
- *       gtmViewItem       — view_item
- *       gtmInitiateCheckout — InitiateCheckout
- *       gtmPurchase       — purchase
- *
- * Payload shape (per requirements):
- * {
- *   event: "<event_name>",
- *   ecommerce: {
- *     "<event_name>": {
- *       actionField: { id, revenue, value, shipping, coupon, source, page },
- *       currency,
- *       value,
- *       items
- *     }
- *   }
- * }
- *
- * RULES:
- *  - Only pushes ecommerce payload structure — no business logic changed.
- *  - actionField properties that are unavailable at the call site are omitted.
- *  - Existing event names are preserved exactly as used in the project.
- *  - Currency is PKR (Pakistani Rupee) — matches store pricing.
- */
-
 // ─── Initialise dataLayer ────────────────────────────────────────────────────
 if (typeof window !== "undefined") {
   window.dataLayer = window.dataLayer || [];
