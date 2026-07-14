@@ -1,5 +1,5 @@
 import Address from "@/components/shopping-view/address";
-import img from "../../assets/account.jpg";
+import img from "/hero/slider2.jpg";
 import { useDispatch, useSelector } from "react-redux";
 import { getShippingCost } from "@/store/admin/settings-slice";
 import UserCartItemsContent from "@/components/shopping-view/cart-items-content";
