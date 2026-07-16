@@ -23,20 +23,9 @@ import { useSearchParams } from "react-router-dom";
 import { getOrCreateGuestId } from "@/lib/utils";
 import { gtmAddToCart } from "@/lib/gtm";
 
-function createSearchParamsHelper(filterParams) {
-  const queryParams = [];
-
-  for (const [key, value] of Object.entries(filterParams)) {
-    if (Array.isArray(value) && value.length > 0) {
-      const paramValue = value.join(",");
-
-      queryParams.push(`${key}=${encodeURIComponent(paramValue)}`);
-    }
-  }
-
-  console.log(queryParams, "queryParams");
-
-  return queryParams.join("&");
+function createSearchParamsHelper(activeFilter) {
+  if (!activeFilter || !activeFilter.section || !activeFilter.value) return "";
+  return `${activeFilter.section}=${encodeURIComponent(activeFilter.value)}`;
 }
 
 function ShoppingListing() {
@@ -46,7 +35,7 @@ function ShoppingListing() {
   );
   const { cartItems } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
-  const [filters, setFilters] = useState({});
+  const [activeFilter, setActiveFilter] = useState(null);
   const [sort, setSort] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -59,25 +48,17 @@ function ShoppingListing() {
   }
 
   function handleFilter(getSectionId, getCurrentOption) {
-    let cpyFilters = { ...filters };
-    const indexOfCurrentSection = Object.keys(cpyFilters).indexOf(getSectionId);
+    if (!getSectionId || !getCurrentOption) return;
 
-    if (indexOfCurrentSection === -1) {
-      cpyFilters = {
-        ...cpyFilters,
-        [getSectionId]: [getCurrentOption],
-      };
-    } else {
-      const indexOfCurrentOption =
-        cpyFilters[getSectionId].indexOf(getCurrentOption);
+    const currentlySelected =
+      activeFilter?.section === getSectionId && activeFilter?.value === getCurrentOption;
 
-      if (indexOfCurrentOption === -1)
-        cpyFilters[getSectionId].push(getCurrentOption);
-      else cpyFilters[getSectionId].splice(indexOfCurrentOption, 1);
-    }
+    const nextFilter = currentlySelected
+      ? null
+      : { section: getSectionId, value: getCurrentOption };
 
-    setFilters(cpyFilters);
-    sessionStorage.setItem("filters", JSON.stringify(cpyFilters));
+    setActiveFilter(nextFilter);
+    sessionStorage.setItem("activeFilter", JSON.stringify(nextFilter));
   }
 
   
@@ -141,36 +122,83 @@ function ShoppingListing() {
 
   useEffect(() => {
     setSort("price-lowtohigh");
-    setFilters(JSON.parse(sessionStorage.getItem("filters")) || {});
+    const stored = JSON.parse(sessionStorage.getItem("activeFilter"));
+    if (categorySearchParam) {
+      setActiveFilter({ section: "category", value: categorySearchParam });
+    } else if (stored && stored.section && stored.value) {
+      setActiveFilter(stored);
+    } else {
+      setActiveFilter(null);
+    }
   }, [categorySearchParam]);
 
   useEffect(() => {
-    if (filters && Object.keys(filters).length > 0) {
-      const createQueryString = createSearchParamsHelper(filters);
-      setSearchParams(new URLSearchParams(createQueryString));
-    }
-  }, [filters]);
+    const createQueryString = createSearchParamsHelper(activeFilter);
+    setSearchParams(new URLSearchParams(createQueryString));
+  }, [activeFilter]);
 
   useEffect(() => {
-    if (filters !== null && sort !== null)
+    if (sort !== null) {
+      const filterParams = activeFilter
+        ? { [activeFilter.section]: [activeFilter.value] }
+        : {};
       dispatch(
-        fetchAllFilteredProducts({ filterParams: filters, sortParams: sort })
+        fetchAllFilteredProducts({ filterParams, sortParams: sort })
       );
-  }, [dispatch, sort, filters]);
+    }
+  }, [dispatch, sort, activeFilter]);
 
   
 
   console.log(productList, "productListproductListproductList");
+  // Apply additional client-side filter logic locally.
+  function applyClientSideFilters(list) {
+    if (!list || list.length === 0) return [];
+
+    let result = [...list];
+
+    if (activeFilter?.section === "price") {
+      const range = activeFilter.value;
+      result = result.filter((p) => {
+        const price = p?.salePrice || p?.price || 0;
+        if (range === "0-2000") return price < 2000;
+        if (range === "2000-8000") return price >= 2000 && price <= 8000;
+        if (range === "8000-16000") return price > 8000 && price <= 16000;
+        if (range === "16000+") return price > 16000;
+        return true;
+      });
+    }
+
+    if (activeFilter?.section === "woodType") {
+      const type = activeFilter.value.toLowerCase();
+      result = result.filter((p) => {
+        const explicit = (p.woodType || p.material || "").toString().toLowerCase();
+        const title = (p.title || "").toString().toLowerCase();
+        const description = (p.description || "").toString().toLowerCase();
+        return (
+          explicit.includes(type) ||
+          title.includes(type) ||
+          description.includes(type)
+        );
+      });
+    }
+
+    // Note: Best Selling filter was removed per requirements.
+
+    return result;
+  }
+
+  const displayedProducts = applyClientSideFilters(productList);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 p-4 md:p-6">
-      <ProductFilter filters={filters} handleFilter={handleFilter} />
+      <ProductFilter activeFilter={activeFilter} handleFilter={handleFilter} />
       <div className="bg-background w-full rounded-lg shadow-sm">
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-lg font-extrabold">All Products</h2>
           <div className="flex items-center gap-3">
             <span className="text-muted-foreground">
-              {productList?.length} Products
+              {displayedProducts?.length} Products
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -199,8 +227,8 @@ function ShoppingListing() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-          {productList && productList.length > 0
-            ? productList.map((productItem) => (
+          {displayedProducts && displayedProducts.length > 0
+            ? displayedProducts.map((productItem) => (
                 <ShoppingProductTile
                   key={productItem?._id || productItem?.id || productItem?.title}
                   product={productItem}

@@ -157,6 +157,19 @@ export const filterOptions = {
     { id: "accessories", label: "Accessories" },
     { id: "home", label: "Home" },
   ],
+  price: [
+    { id: "0-2000", label: "Under PKR 2,000" },
+    { id: "2000-8000", label: "PKR 2,000 - PKR 8,000" },
+    { id: "8000-16000", label: "PKR 8,000 - PKR 16,000" },
+    { id: "16000+", label: "Above PKR 16,000" },
+  ],
+  woodType: [
+    { id: "teak", label: "Teak" },
+    { id: "sheesham", label: "Sheesham" },
+    { id: "mango", label: "Mango" },
+    { id: "acacia", label: "Acacia" },
+    { id: "oak", label: "Oak" },
+  ],
 };
 
 export const sortOptions = [
